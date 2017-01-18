@@ -5,7 +5,7 @@ class StoreEntry {
   struct Position {
     String lat;
     String lon;
-    String serialize() {
+    String toJSON() {
       return "\"lat\": \"" + String(lat) + "\",\n"
            + "\"lon\": \"" + String(lon) + "\"";
     }
@@ -14,7 +14,7 @@ class StoreEntry {
   struct Proximity {
     String direction;
     float distance;
-    String serialize() {
+    String toJSON() {
       return "\"direction\": \"" + String(direction) + "\",\n"
            + "\"distance\": " + String(distance);
     }
@@ -22,16 +22,12 @@ class StoreEntry {
 
   struct Heading {
     float degrees;
-    String serialize() {
+    String toJSON() {
       return "\"degrees\": " + String(degrees);
     };
   };
 
   public:
-    Heading heading;
-    Position position;
-    LinkedList<Proximity> proximities;
-
     StoreEntry(void(*FUNC_DEBUG) (String));
     ~StoreEntry();
 
@@ -41,9 +37,17 @@ class StoreEntry {
 
     int addProximity(String direction, float distance);
 
-    String serialize();
+    String toJSON();
 
     int log();
+
+  private:
+    Heading heading;
+    Position position;
+    LinkedList<Proximity> proximities;
+
+    void(*DEBUG) (String);
+
 
 
 };

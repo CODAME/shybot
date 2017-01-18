@@ -1,10 +1,8 @@
 #include <Arduino.h>
 #include "StoreEntry.h"
 
-void(*SB_DEBUG) (String);
-
 StoreEntry::StoreEntry(void(*FUNC_DEBUG) (String)) {
-  SB_DEBUG = FUNC_DEBUG;
+  this->DEBUG = FUNC_DEBUG;
 };
 StoreEntry::~StoreEntry() {
   delete &heading;
@@ -27,12 +25,12 @@ int StoreEntry::addProximity(String direction, float distance) {
   return 0;
 };
 
-String StoreEntry::serialize() {
-  String ser = "{\n\"heading: {" + heading.serialize() + "},\n"
-             + "\"position: {" + position.serialize() + "},\n"
+String StoreEntry::toJSON() {
+  String ser = "{\n\"heading: {" + heading.toJSON() + "},\n"
+             + "\"position: {" + position.toJSON() + "},\n"
              + "\"proximities: [\n";
   for(int i = 0; i < proximities.size(); i++) {
-    ser += "{" + proximities.get(i).serialize() + "},\n";
+    ser += "{" + proximities.get(i).toJSON() + "},\n";
   }
   ser += "]\n";
   ser += "}";
@@ -40,6 +38,6 @@ String StoreEntry::serialize() {
 };
 
 int StoreEntry::log() {
-  SB_DEBUG(serialize());
+  DEBUG(toJSON());
   return 1;
 };
