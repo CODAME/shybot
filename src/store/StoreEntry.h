@@ -1,29 +1,37 @@
+#pragma once
+
 #include <Arduino.h>
 #include <LinkedList.h>
+#include <ArduinoJson.h>
 
 class StoreEntry {
   struct Position {
-    String lat;
-    String lon;
-    String toJSON() {
-      return "\"lat\": \"" + String(lat) + "\",\n"
-           + "\"lon\": \"" + String(lon) + "\"";
-    }
+    float lat;
+    float lon;
+    int toJSON(JsonObject& node, const char* key) {
+      JsonObject& child = node.createNestedObject(key);
+      child.set("lat", lat, 10);
+      child.set("lon", lon, 10);
+      return 0;
+    };
   };
 
   struct Proximity {
     String direction;
     float distance;
-    String toJSON() {
-      return "\"direction\": \"" + String(direction) + "\",\n"
-           + "\"distance\": " + String(distance);
+    int toJSON(JsonObject& node) {
+      node["direction"] = direction;
+      node["distance"] = distance;
+      return 0;
     }
   };
 
   struct Heading {
     float degrees;
-    String toJSON() {
-      return "\"degrees\": " + String(degrees);
+    int toJSON(JsonObject& node, const char* key) {
+      JsonObject& child = node.createNestedObject(key);
+      child.set("degrees", degrees);
+      return 0;
     };
   };
 
@@ -33,13 +41,11 @@ class StoreEntry {
 
     int setHeading(float heading);
 
-    int setPosition(String lat, String lon);
+    int setPosition(float lat, float lon);
 
     int addProximity(String direction, float distance);
 
-    String toJSON();
-
-    int log();
+    JsonObject& toJSON();
 
   private:
     Heading heading;

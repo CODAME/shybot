@@ -13,7 +13,8 @@ SDStore::SDStore(String fname, int csPin, void(*FUNC_DEBUG) (String)) {
 int SDStore::store(StoreEntry *entry) {
   dataFile = SD.open(filename, FILE_WRITE);
   if(dataFile) {
-    dataFile.println(entry->toJSON() + ",\n");
+    entry->toJSON().printTo(dataFile);
+    dataFile.print("\n");
     dataFile.close();
     return 0;
   } else {

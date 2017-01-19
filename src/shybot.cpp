@@ -3,6 +3,7 @@
 
 #include "sensor/Heading.h"
 #include "store/SDStore.h"
+#include "store/SerialStore.h"
 
 #define PIN_CS 4
 
@@ -12,6 +13,7 @@ float headingDegrees;
 Heading *heading;
 StoreEntry *storeEntry;
 SDStore *sdStore;
+SerialStore *serialStore;
 
 void DEBUG(String err) {
   Serial.println(err);
@@ -24,13 +26,14 @@ void setup(void)
   heading = new Heading(DEBUG);
   storeEntry = new StoreEntry(DEBUG);
   sdStore = new SDStore("readings.txt", PIN_CS, DEBUG);
+  serialStore = new SerialStore(DEBUG);
 }
 
 void loop(void)
 {
   storeEntry->setHeading(heading->getHeadingDegrees());
-  //storeEntry->log();
-  sdStore->store(storeEntry);
+  //sdStore->store(storeEntry);
+  serialStore->store(storeEntry);
 
   delay(500);
 }

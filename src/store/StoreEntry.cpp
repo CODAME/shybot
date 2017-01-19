@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include "StoreEntry.h"
 
 StoreEntry::StoreEntry(void(*FUNC_DEBUG) (String)) {
@@ -15,7 +16,7 @@ int StoreEntry::setHeading(float heading) {
   return 0;
 };
 
-int StoreEntry::setPosition(String lat, String lon) {
+int StoreEntry::setPosition(float lat, float lon) {
   this->position = { lat, lon };
   return 0;
 }
@@ -25,19 +26,16 @@ int StoreEntry::addProximity(String direction, float distance) {
   return 0;
 };
 
-String StoreEntry::toJSON() {
-  String ser = "{\n\"heading: {" + heading.toJSON() + "},\n"
-             + "\"position: {" + position.toJSON() + "},\n"
-             + "\"proximities: [\n";
+JsonObject& StoreEntry::toJSON() {
+  StaticJsonBuffer<1024> buf;
+  JsonObject& root = buf.createObject();
+  heading.toJSON(root, "heading");
+  position.toJSON(root, "position");
+  JsonArray& proximitiesJson = root.createNestedArray("proximities");
   for(int i = 0; i < proximities.size(); i++) {
-    ser += "{" + proximities.get(i).toJSON() + "},\n";
+    JsonObject& node = buf.createObject();
+    proximities.get(i).toJSON(node);
+    proximitiesJson.add(node);
   }
-  ser += "]\n";
-  ser += "}";
-  return ser;
-};
-
-int StoreEntry::log() {
-  DEBUG(toJSON());
-  return 1;
+  return root;
 };
