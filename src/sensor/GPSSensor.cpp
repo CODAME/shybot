@@ -8,8 +8,6 @@ GPSSensor::GPSSensor(Adafruit_FONA *myFona) {
 };
 
 GPSSensor::Position GPSSensor::getPosition() {
-  bool gpsSuccess = false;
-  bool gsmSuccess = false;
   float latitude = 0.0;
   float longitude = 0.0;
   float speedKPH = 0.0;
@@ -19,7 +17,5 @@ GPSSensor::Position GPSSensor::getPosition() {
   if(!gpsSuccess && fona->getNetworkStatus() == 1) {
     gsmSuccess = fona->getGSMLoc(&latitude, &longitude);
   }
-  DEBUG(String("GPS Success: " + gpsSuccess));
-  DEBUG(String("GSM Success: " + gsmSuccess));
   return Position({ latitude, longitude, altitude, speedKPH });
 };

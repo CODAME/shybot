@@ -7,7 +7,7 @@
 HeadingSensor::HeadingSensor() {
   this->mag = Adafruit_HMC5883_Unified(12345);
   if(!this->mag.begin()) {
-     DEBUG(F("No sensor found."));
+     DEBUG("No sensor found.");
   }
 }
 

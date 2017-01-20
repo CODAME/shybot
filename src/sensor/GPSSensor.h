@@ -12,6 +12,8 @@ class GPSSensor {
     };
     GPSSensor(Adafruit_FONA *fona);
     Position getPosition();
+    bool gpsSuccess = false;
+    bool gsmSuccess = false;
 
   private:
     Adafruit_FONA *fona;

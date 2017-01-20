@@ -9,7 +9,7 @@
 class StoreEntry {
   public:
     struct Proximity {
-      String direction;
+      const char *direction;
       float distance;
     };
 
@@ -18,13 +18,11 @@ class StoreEntry {
 
     int setHeading(HeadingSensor::Heading heading);
 
-    int setPosition(GPSSensor::Position position);
+    int addProximity(const char* direction, float distance);
 
-    int addProximity(String direction, float distance);
+    const char* getCSVHeaders();
 
-    String getCSVHeaders();
-
-    String getCSV();
+    const char* getCSV();
 
 
     HeadingSensor::Heading heading;
@@ -32,7 +30,6 @@ class StoreEntry {
     Proximity proximities[NUM_PROXIMITIES];
 
   private:
-    void(*DEBUG) (String);
     int proximityCur = 0;
 
 

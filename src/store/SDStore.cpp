@@ -9,8 +9,8 @@ const char* failMsg = "Card failed, or not present";
 char databuf[512];
 
 
-SDStore::SDStore(String fname, int csPin) {
-  fname.toCharArray(filename, MAX_FILENAME_SIZE);
+SDStore::SDStore(const char *fname, int csPin) {
+  filename = fname;
   if (!SD.begin(csPin)) {
     DEBUG(failMsg);
   }

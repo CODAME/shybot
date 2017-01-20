@@ -8,12 +8,11 @@
 
 class SDStore {
   public:
-    SDStore(String fname, int csPin);
+    SDStore(const char *fname, int csPin);
 
     int store(StoreEntry* entry);
 
   private:
-    char filename[MAX_FILENAME_SIZE];
+    const char *filename;
     File dataFile;
-    void(*DEBUG) (String);
 };

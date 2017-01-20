@@ -29,10 +29,9 @@ void setup(void)
 
   fonaSerial->begin(4800);
   if(!fona.begin(*fonaSerial)) {
-    DEBUG(F("Failed to communicate with FONA"));
+    DEBUG("Failed to communicate with FONA");
     while(true) {}
   }
-  DEBUG(String(fona.getNetworkStatus()));
   while(fona.getNetworkStatus() != 1) { delay(1000); }
   fona.enableGPS(true);
   fona.setGPRSNetworkSettings(F("wholesale"), F(""), F(""));
@@ -40,7 +39,7 @@ void setup(void)
   //heading = new HeadingSensor();
   gps = new GPSSensor(&fona);
   storeEntry = new StoreEntry();
-  sdStore = new SDStore(F("readings.txt"), PIN_SD_CS);
+  sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
 }
 
@@ -48,8 +47,7 @@ void loop(void)
 {
   DEBUG("Started loop");
   //storeEntry->setHeading(heading->getHeading());
-  GPSSensor::Position position = gps->getPosition();
-  //storeEntry->setPosition(position);
+  storeEntry->position = gps->getPosition();
   DEBUG("got position");
   //sdStore->store(storeEntry);
   logStore->store(storeEntry);

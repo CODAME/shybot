@@ -11,6 +11,6 @@ int sbSetTimeOffset(uint32_t current) {
   return 0;
 }
 
-void DEBUG(String err) {
+void DEBUG(const char *err) {
   Serial.println(err);
 }

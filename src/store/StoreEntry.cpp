@@ -2,7 +2,8 @@
 #include "helpers.h"
 #include "StoreEntry.h"
 #include "sensor/GPSSensor.h"
-#include "sensor/HeadingSensor.h"
+
+char csvbuffer[256];
 
 StoreEntry::StoreEntry() {
 };
@@ -12,29 +13,29 @@ int StoreEntry::setHeading(HeadingSensor::Heading heading) {
   return 0;
 };
 
-int StoreEntry::setPosition(GPSSensor::Position position) {
-  DEBUG("set position");
-  this->position = position;
-  return 0;
-}
-
-int StoreEntry::addProximity(String direction, float distance) {
+int StoreEntry::addProximity(const char *direction, float distance) {
   if(proximityCur == NUM_PROXIMITIES -1) {
-    DEBUG(F("Too many proximities."));
+    DEBUG("Too many proximities.");
     return 1;
   }
   this->proximities[proximityCur++] = { direction, distance };
   return 0;
 };
 
-String StoreEntry::getCSVHeaders() {
-  return F("timestamp,heading,latitude,longitude,altitude,proximity_1,proximity_2,proximity_3,proximity_4,proximity_5,proximity_6,proximity_7,proximity_8");
+const char* StoreEntry::getCSVHeaders() {
+  return "timestamp,heading,latitude,longitude,altitude,proximity_1,proximity_2,proximity_3,proximity_4,proximity_5,proximity_6,proximity_7,proximity_8";
 };
 
-String StoreEntry::getCSV() {
-    return String(sbGetTime()) + ","
-      + heading.degrees + ","
-      + position.lat + ","
-      + position.lon + ","
-      + position.altitude;
+const char* StoreEntry::getCSV() {
+  snprintf(
+    csvbuffer,
+    256,
+    "%lu,%f,%f,%f,%f",
+    sbGetTime(),
+    heading.degrees,
+    position.lat,
+    position.lon,
+    position.altitude
+  );
+  return csvbuffer;
 }
