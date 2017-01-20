@@ -49,6 +49,7 @@ void loop(void)
   //storeEntry->setHeading(heading->getHeading());
   storeEntry->position = gps->getPosition();
   DEBUG("got position");
+  DEBUG(String(0.1));
   //sdStore->store(storeEntry);
   logStore->store(storeEntry);
   DEBUG("stored");
