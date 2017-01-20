@@ -1,3 +1,5 @@
+#ifndef SB_HEADING_SENSOR
+#define SB_HEADING_SENSOR
 #include <Adafruit_HMC5883_U.h>
 
 class HeadingSensor {
@@ -15,3 +17,4 @@ class HeadingSensor {
 
     void applyDeclination(float &heading);
 };
+#endif

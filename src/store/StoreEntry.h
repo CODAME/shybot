@@ -16,7 +16,7 @@ class StoreEntry {
     StoreEntry();
     ~StoreEntry();
 
-    int setHeading(float heading);
+    int setHeading(HeadingSensor::Heading heading);
 
     int setPosition(GPSSensor::Position position);
 

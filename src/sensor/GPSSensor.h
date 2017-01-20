@@ -15,7 +15,5 @@ class GPSSensor {
 
   private:
     Adafruit_FONA *fona;
-    boolean gpsSuccess, gsmSuccess;
-    float latitude, longitude, speedKPH, heading, speedMPH, altitude;
 };
 #endif

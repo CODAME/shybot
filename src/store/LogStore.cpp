@@ -7,6 +7,6 @@ LogStore::LogStore() {
 };
 
 int LogStore::store(StoreEntry *entry) {
-  DEBUG(entry->getCSVHeaders());
+  DEBUG(entry->getCSV());
   return 0;
 };

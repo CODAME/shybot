@@ -12,7 +12,6 @@
 #define PIN_SD_CS 4
 #define PIN_FONA_RST 10
 
-
 HardwareSerial *fonaSerial = &Serial1;
 
 Adafruit_FONA fona = Adafruit_FONA(PIN_FONA_RST);
@@ -28,23 +27,18 @@ void setup(void)
   while(!Serial) {}
   Serial.begin(9600);
 
-  fonaSerial->begin(4800, SERIAL_8N1);
+  fonaSerial->begin(4800);
   if(!fona.begin(*fonaSerial)) {
     DEBUG(F("Failed to communicate with FONA"));
     while(true) {}
   }
-  char imei[15] = {0};
-  uint8_t imeiLen = fona.getIMEI(imei);
-  if(imeiLen > 0) {
-    DEBUG("IMEI:");
-    DEBUG(imei);
-  }
   DEBUG(String(fona.getNetworkStatus()));
-  delay(2000);
+  while(fona.getNetworkStatus() != 1) { delay(1000); }
   fona.enableGPS(true);
   fona.setGPRSNetworkSettings(F("wholesale"), F(""), F(""));
-  fona.enableGPRS(true);
-  heading = new HeadingSensor();
+  //fona.enableGPRS(true);
+  //heading = new HeadingSensor();
+  gps = new GPSSensor(&fona);
   storeEntry = new StoreEntry();
   sdStore = new SDStore(F("readings.txt"), PIN_SD_CS);
   logStore = new LogStore();
@@ -52,10 +46,14 @@ void setup(void)
 
 void loop(void)
 {
-  storeEntry->setHeading(heading->getHeadingDegrees());
-  storeEntry->setPosition(gps->getPosition());
+  DEBUG("Started loop");
+  //storeEntry->setHeading(heading->getHeading());
+  GPSSensor::Position position = gps->getPosition();
+  //storeEntry->setPosition(position);
+  DEBUG("got position");
   //sdStore->store(storeEntry);
   logStore->store(storeEntry);
+  DEBUG("stored");
 
   delay(2000);
 }

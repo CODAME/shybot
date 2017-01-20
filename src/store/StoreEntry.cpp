@@ -2,21 +2,18 @@
 #include "helpers.h"
 #include "StoreEntry.h"
 #include "sensor/GPSSensor.h"
+#include "sensor/HeadingSensor.h"
 
 StoreEntry::StoreEntry() {
 };
-StoreEntry::~StoreEntry() {
-  delete &heading;
-  delete &position;
-  delete &proximities;
-}
 
-int StoreEntry::setHeading(float heading) {
-  this->heading = { heading };
+int StoreEntry::setHeading(HeadingSensor::Heading heading) {
+  this->heading = heading;
   return 0;
 };
 
 int StoreEntry::setPosition(GPSSensor::Position position) {
+  DEBUG("set position");
   this->position = position;
   return 0;
 }
