@@ -1,13 +1,14 @@
 #include <Arduino.h>
 #include <SD.h>
 
+#include "helpers.h"
 #include "StoreEntry.h"
 
 #define MAX_FILENAME_SIZE 256
 
 class SDStore {
   public:
-    SDStore(String fname, int csPin, void(*FUNC_DEBUG) (String));
+    SDStore(String fname, int csPin);
 
     int store(StoreEntry* entry);
 

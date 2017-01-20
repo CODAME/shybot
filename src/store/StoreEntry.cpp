@@ -1,9 +1,9 @@
 #include <Arduino.h>
-#include <ArduinoJson.h>
+#include "helpers.h"
 #include "StoreEntry.h"
+#include "sensor/GPSSensor.h"
 
-StoreEntry::StoreEntry(void(*FUNC_DEBUG) (String)) {
-  this->DEBUG = FUNC_DEBUG;
+StoreEntry::StoreEntry() {
 };
 StoreEntry::~StoreEntry() {
   delete &heading;
@@ -16,26 +16,28 @@ int StoreEntry::setHeading(float heading) {
   return 0;
 };
 
-int StoreEntry::setPosition(float lat, float lon) {
-  this->position = { lat, lon };
+int StoreEntry::setPosition(GPSSensor::Position position) {
+  this->position = position;
   return 0;
 }
 
 int StoreEntry::addProximity(String direction, float distance) {
-  this->proximities.add({ direction, distance });
+  if(proximityCur == NUM_PROXIMITIES -1) {
+    DEBUG(F("Too many proximities."));
+    return 1;
+  }
+  this->proximities[proximityCur++] = { direction, distance };
   return 0;
 };
 
-JsonObject& StoreEntry::toJSON() {
-  StaticJsonBuffer<1024> buf;
-  JsonObject& root = buf.createObject();
-  heading.toJSON(root, "heading");
-  position.toJSON(root, "position");
-  JsonArray& proximitiesJson = root.createNestedArray("proximities");
-  for(int i = 0; i < proximities.size(); i++) {
-    JsonObject& node = buf.createObject();
-    proximities.get(i).toJSON(node);
-    proximitiesJson.add(node);
-  }
-  return root;
+String StoreEntry::getCSVHeaders() {
+  return F("timestamp,heading,latitude,longitude,altitude,proximity_1,proximity_2,proximity_3,proximity_4,proximity_5,proximity_6,proximity_7,proximity_8");
 };
+
+String StoreEntry::getCSV() {
+    return String(sbGetTime()) + ","
+      + heading.degrees + ","
+      + position.lat + ","
+      + position.lon + ","
+      + position.altitude;
+}

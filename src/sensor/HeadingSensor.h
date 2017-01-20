@@ -1,10 +1,14 @@
 #include <Adafruit_HMC5883_U.h>
 
-class Heading {
+class HeadingSensor {
   public:
-     Heading(void(*FUNC_DEBUG) (String));
+    struct Heading {
+      float degrees;
+    };
 
-     float getHeadingDegrees();
+    HeadingSensor();
+
+    Heading getHeading();
 
   private:
     Adafruit_HMC5883_Unified mag;

@@ -1,39 +1,61 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <Adafruit_FONA.h>
 
-#include "sensor/Heading.h"
+#include "helpers.h"
+
+#include "sensor/HeadingSensor.h"
+#include "sensor/GPSSensor.h"
 #include "store/SDStore.h"
-#include "store/SerialStore.h"
+#include "store/LogStore.h"
 
-#define PIN_CS 4
+#define PIN_SD_CS 4
+#define PIN_FONA_RST 10
 
-/* Assign a unique ID to this sensor at the same time */
-String dataString;
-float headingDegrees;
-Heading *heading;
+
+HardwareSerial *fonaSerial = &Serial1;
+
+Adafruit_FONA fona = Adafruit_FONA(PIN_FONA_RST);
+HeadingSensor *heading;
+GPSSensor *gps;
 StoreEntry *storeEntry;
 SDStore *sdStore;
-SerialStore *serialStore;
+LogStore *logStore;
 
-void DEBUG(String err) {
-  Serial.println(err);
-}
+
 void setup(void)
 {
+  while(!Serial) {}
   Serial.begin(9600);
-  while(!Serial) {
+
+  fonaSerial->begin(4800, SERIAL_8N1);
+  if(!fona.begin(*fonaSerial)) {
+    DEBUG(F("Failed to communicate with FONA"));
+    while(true) {}
   }
-  heading = new Heading(DEBUG);
-  storeEntry = new StoreEntry(DEBUG);
-  sdStore = new SDStore("readings.txt", PIN_CS, DEBUG);
-  serialStore = new SerialStore(DEBUG);
+  char imei[15] = {0};
+  uint8_t imeiLen = fona.getIMEI(imei);
+  if(imeiLen > 0) {
+    DEBUG("IMEI:");
+    DEBUG(imei);
+  }
+  DEBUG(String(fona.getNetworkStatus()));
+  delay(2000);
+  fona.enableGPS(true);
+  fona.setGPRSNetworkSettings(F("wholesale"), F(""), F(""));
+  fona.enableGPRS(true);
+  heading = new HeadingSensor();
+  storeEntry = new StoreEntry();
+  sdStore = new SDStore(F("readings.txt"), PIN_SD_CS);
+  logStore = new LogStore();
 }
 
 void loop(void)
 {
   storeEntry->setHeading(heading->getHeadingDegrees());
+  storeEntry->setPosition(gps->getPosition());
   //sdStore->store(storeEntry);
-  serialStore->store(storeEntry);
+  logStore->store(storeEntry);
 
-  delay(500);
+  delay(2000);
 }

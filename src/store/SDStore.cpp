@@ -1,24 +1,33 @@
 #include <Arduino.h>
-#include "SDStore.h"
 #include <SD.h>
 
-SDStore::SDStore(String fname, int csPin, void(*FUNC_DEBUG) (String)) {
-  this->DEBUG = FUNC_DEBUG;
+#include "SDStore.h"
+#include "helpers.h"
+
+
+const char* failMsg = "Card failed, or not present";
+char databuf[512];
+
+
+SDStore::SDStore(String fname, int csPin) {
   fname.toCharArray(filename, MAX_FILENAME_SIZE);
   if (!SD.begin(csPin)) {
-    DEBUG("Card failed, or not present");
+    DEBUG(failMsg);
   }
 };
 
 int SDStore::store(StoreEntry *entry) {
   dataFile = SD.open(filename, FILE_WRITE);
   if(dataFile) {
-    entry->toJSON().printTo(dataFile);
-    dataFile.print("\n");
+    if (dataFile.size() == 0) {
+      dataFile.println(entry->getCSVHeaders());
+    }
+
+    dataFile.println(entry->getCSV());
     dataFile.close();
     return 0;
   } else {
-    DEBUG("Card failed, or not present");
+    DEBUG(failMsg);
     return 1;
   }
 
