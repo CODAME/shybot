@@ -3,6 +3,8 @@
 #include "StoreEntry.h"
 #include "sensor/GPSSensor.h"
 
+#include <stdio.h>
+
 char csvbuffer[256];
 
 StoreEntry::StoreEntry() {
@@ -27,6 +29,8 @@ const char* StoreEntry::getCSVHeaders() {
 };
 
 const char* StoreEntry::getCSV() {
+  String foo = String("foo"); //this makes the ATS able to convert floats :/
+
   snprintf(
     csvbuffer,
     256,

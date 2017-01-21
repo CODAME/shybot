@@ -45,14 +45,10 @@ void setup(void)
 
 void loop(void)
 {
-  DEBUG("Started loop");
   //storeEntry->setHeading(heading->getHeading());
   storeEntry->position = gps->getPosition();
-  DEBUG("got position");
-  DEBUG(String(0.1));
   //sdStore->store(storeEntry);
   logStore->store(storeEntry);
-  DEBUG("stored");
 
   delay(2000);
 }

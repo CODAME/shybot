@@ -4,16 +4,14 @@
 
 class GPSSensor {
   public:
-    struct Position {
-      float lat;
-      float lon;
-      float altitude;
-      float kph;
-    };
+    struct Position { double lat, lon, altitude, kph; };
+
     GPSSensor(Adafruit_FONA *fona);
     Position getPosition();
+    time_t getTime();
     bool gpsSuccess = false;
     bool gsmSuccess = false;
+    bool didSetTime = false;
 
   private:
     Adafruit_FONA *fona;
