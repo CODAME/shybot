@@ -5,7 +5,7 @@
 
 #include <stdio.h>
 
-char csvbuffer[256];
+char csvbuffer[512];
 
 StoreEntry::StoreEntry() {
 };
@@ -28,18 +28,33 @@ const char* StoreEntry::getCSVHeaders() {
   return "timestamp,heading,latitude,longitude,altitude,proximity_1,proximity_2,proximity_3,proximity_4,proximity_5,proximity_6,proximity_7,proximity_8";
 };
 
-const char* StoreEntry::getCSV() {
-  String foo = String("foo"); //this makes the ATS able to convert floats :/
+const char* StoreEntry::getCSVLocation() {
+  String foo = String("foo"); //this makes the ATSAM21D able to convert floats :/
 
   snprintf(
     csvbuffer,
     256,
-    "%lu,%f,%f,%f,%f",
+    "%lu,%.10f,%.10f",
+    sbGetTime(),
+    position.lat,
+    position.lon
+  );
+  return csvbuffer;
+}
+
+const char* StoreEntry::getCSV() {
+  String foo = String("foo"); //this makes the ATSAM21D able to convert floats :/
+
+  snprintf(
+    csvbuffer,
+    512,
+    "%lu,%.2f,%.10f,%.10f,%.2f,%.2f",
     sbGetTime(),
     heading.degrees,
     position.lat,
     position.lon,
-    position.altitude
+    position.altitude,
+    position.kph
   );
   return csvbuffer;
 }

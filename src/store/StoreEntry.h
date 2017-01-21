@@ -22,6 +22,8 @@ class StoreEntry {
 
     const char* getCSVHeaders();
 
+    const char* getCSVLocation();
+
     const char* getCSV();
 
 
