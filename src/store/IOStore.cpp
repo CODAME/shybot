@@ -9,7 +9,10 @@
 
 #define MAXTXFAILURES 5
 
-#define LOCATION_FEED AIO_USERNAME "/feeds/location"
+#define LOCATION_FEED AIO_USERNAME "/feeds/location/csv"
+#define HEADING_FEED AIO_USERNAME "/feeds/heading"
+#define SPEED_FEED AIO_USERNAME "/feeds/speed"
+#define PROXIMITY_N_FEED AIO_USERNAME "/feeds/proximity-n"
 
 #define halt(s) { DEBUG(F( s )); delay(1000); NVIC_SystemReset(); }
 
@@ -21,7 +24,10 @@ const uint8_t QOS_LEVEL=0;
 IOStore::IOStore(Adafruit_FONA *myFona, Adafruit_MQTT_FONA *myMqtt) {
   fona = myFona;
   mqtt = myMqtt;
-  locationFeed = new Adafruit_MQTT_Publish(mqtt, "mhzmaster/feeds/location/csv", QOS_LEVEL);
+  locationFeed = new Adafruit_MQTT_Publish(mqtt, LOCATION_FEED, QOS_LEVEL);
+  headingFeed = new Adafruit_MQTT_Publish(mqtt, HEADING_FEED, QOS_LEVEL);
+  speedFeed = new Adafruit_MQTT_Publish(mqtt, SPEED_FEED, QOS_LEVEL);
+  proximityNFeed = new Adafruit_MQTT_Publish(mqtt, PROXIMITY_N_FEED, QOS_LEVEL);
 };
 
 int IOStore::connectNetwork() {
@@ -97,10 +103,13 @@ int IOStore::store(StoreEntry *entry) {
   if(fonaStatus != IOSTORE_SUCCESS) {
     return fonaStatus;
   }
-  DEBUG(F("We have a connection to IO."));
-  if(!locationFeed->publish(entry->getCSVLocation())) {
-    return IOSTORE_NET_FAILURE;
-  } else {
+  if  (locationFeed->publish(entry->getCSVLocation())
+    && headingFeed->publish(entry->heading.degrees)
+    && speedFeed->publish(entry->position.kph)
+    && proximityNFeed->publish(entry->proximities[0]->distance)
+      ) {
     return IOSTORE_SUCCESS;
+  } else {
+    return IOSTORE_NET_FAILURE;
   }
 }

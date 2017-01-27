@@ -3,24 +3,22 @@
 #include <Arduino.h>
 #include "../sensor/GPSSensor.h"
 #include "../sensor/HeadingSensor.h"
+#include "../sensor/ProximitySensor.h"
 
 #define NUM_PROXIMITIES 8
 
 class StoreEntry {
   public:
-    struct Proximity {
-      const char *direction;
-      float distance;
-    };
-
     StoreEntry();
     ~StoreEntry();
 
     int setHeading(HeadingSensor::Heading heading);
 
-    int addProximity(const char* direction, float distance);
+    int addProximity(ProximitySensor::Proximity *proximity);
 
     const char* getCSVHeaders();
+
+    const char* getHeading();
 
     const char* getCSVLocation();
 
@@ -29,7 +27,7 @@ class StoreEntry {
 
     HeadingSensor::Heading heading;
     GPSSensor::Position position;
-    Proximity proximities[NUM_PROXIMITIES];
+    ProximitySensor::Proximity *proximities[NUM_PROXIMITIES];
 
   private:
     int proximityCur = 0;

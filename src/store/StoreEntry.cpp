@@ -5,28 +5,37 @@
 
 #include <stdio.h>
 
+#define CSV_HEADER "timestamp,heading,latitude,longitude,altitude,proximity_N,proximity_NE,proximity_E,proximity_SE,proximity_S,proximity_SW,proximity_W,proximity_NW"
+
+
 char csvbuffer[512];
 
 StoreEntry::StoreEntry() {
 };
+
+StoreEntry::~StoreEntry() {
+  for(int i=0; i<proximityCur; i++) {
+    delete proximities[i];
+  }
+}
 
 int StoreEntry::setHeading(HeadingSensor::Heading heading) {
   this->heading = heading;
   return 0;
 };
 
-int StoreEntry::addProximity(const char *direction, float distance) {
+int StoreEntry::addProximity(ProximitySensor::Proximity *proximity) {
   if(proximityCur == NUM_PROXIMITIES -1) {
-    DEBUG("Too many proximities.");
+    DEBUG(F("Too many proximities."));
     return 1;
   }
-  this->proximities[proximityCur++] = { direction, distance };
+  this->proximities[proximityCur++] = proximity;
   return 0;
 };
 
 const char* StoreEntry::getCSVHeaders() {
-  return "timestamp,heading,latitude,longitude,altitude,proximity_1,proximity_2,proximity_3,proximity_4,proximity_5,proximity_6,proximity_7,proximity_8";
-};
+  return CSV_HEADER;
+}
 
 const char* StoreEntry::getCSVLocation() {
   String foo = String("foo"); //this makes the ATSAM21D able to convert floats :/
@@ -34,7 +43,7 @@ const char* StoreEntry::getCSVLocation() {
   snprintf(
     csvbuffer,
     256,
-    "%lu,%.10f,%.10f",
+    "%lu,%.8f,%.8f",
     sbGetTime(),
     position.lat,
     position.lon
@@ -48,13 +57,14 @@ const char* StoreEntry::getCSV() {
   snprintf(
     csvbuffer,
     512,
-    "%lu,%.2f,%.10f,%.10f,%.2f,%.2f",
+    "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%lu",
     sbGetTime(),
     heading.degrees,
     position.lat,
     position.lon,
     position.altitude,
-    position.kph
+    position.kph,
+    proximities[0]->distance
   );
   return csvbuffer;
 }

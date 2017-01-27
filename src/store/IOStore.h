@@ -25,4 +25,7 @@ class IOStore {
     Adafruit_FONA *fona;
     Adafruit_MQTT *mqtt;
     Adafruit_MQTT_Publish *locationFeed;
+    Adafruit_MQTT_Publish *headingFeed;
+    Adafruit_MQTT_Publish *speedFeed;
+    Adafruit_MQTT_Publish *proximityNFeed;
 };

@@ -8,6 +8,7 @@
 #include "helpers.h"
 
 #include "sensor/HeadingSensor.h"
+#include "sensor/ProximitySensor.h"
 #include "sensor/GPSSensor.h"
 #include "store/SDStore.h"
 #include "store/LogStore.h"
@@ -15,6 +16,8 @@
 
 #define PIN_SD_CS 4
 #define PIN_FONA_RST 13
+
+#define PIN_SONAR_1 A3
 
 HardwareSerial *fonaSerial = &Serial1;
 
@@ -27,6 +30,7 @@ StoreEntry *storeEntry;
 SDStore *sdStore;
 LogStore *logStore;
 IOStore *ioStore;
+ProximitySensor proximity1 = ProximitySensor(PIN_SONAR_1, SENSOR_ORIENTATION_N, SENSOR_TYPE_SONAR);
 
 
 void setup(void)
@@ -43,22 +47,25 @@ void setup(void)
   fona.setGPRSNetworkSettings(F(FONA_APN), F(""), F(""));
   heading = new HeadingSensor();
   gps = new GPSSensor(&fona);
-  storeEntry = new StoreEntry();
   sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
   ioStore = new IOStore(&fona, &mqtt);
+  pinMode(A5, INPUT);
+  digitalWrite(A5, HIGH);
 }
 
 void loop(void)
 {
+  delete storeEntry;
+  storeEntry = new StoreEntry();
   storeEntry->setHeading(heading->getHeading());
   storeEntry->position = gps->getPosition();
+  storeEntry->addProximity(proximity1.getProximity());
   //sdStore->store(storeEntry);
   int ioStatus = ioStore->store(storeEntry);
   if(ioStatus != IOSTORE_SUCCESS ) {
     DEBUG(F("Failed to upload store."));
   }
   logStore->store(storeEntry);
-
-  delay(2000);
+  delay(500);
 }
