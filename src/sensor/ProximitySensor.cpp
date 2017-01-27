@@ -16,6 +16,5 @@ ProximitySensor::ProximitySensor(int pin,
 
 ProximitySensor::Proximity* ProximitySensor::getProximity() {
   uint32_t distance = sonar->convert_cm(sonar->ping_median());
-  DEBUG(distance);
   return new Proximity({ type, orientation, distance });
 };

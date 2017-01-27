@@ -57,13 +57,14 @@ const char* StoreEntry::getCSV() {
   snprintf(
     csvbuffer,
     512,
-    "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%lu",
+    "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%.2f,%lu",
     sbGetTime(),
     heading.degrees,
     position.lat,
     position.lon,
     position.altitude,
     position.kph,
+    rpm.rpm,
     proximities[0]->distance
   );
   return csvbuffer;

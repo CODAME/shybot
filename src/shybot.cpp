@@ -8,8 +8,9 @@
 #include "helpers.h"
 
 #include "sensor/HeadingSensor.h"
-#include "sensor/ProximitySensor.h"
 #include "sensor/GPSSensor.h"
+#include "sensor/ProximitySensor.h"
+#include "sensor/RPMSensor.h"
 #include "store/SDStore.h"
 #include "store/LogStore.h"
 #include "store/IOStore.h"
@@ -18,6 +19,7 @@
 #define PIN_FONA_RST 13
 
 #define PIN_SONAR_1 A3
+#define PIN_RPM 11
 
 HardwareSerial *fonaSerial = &Serial1;
 
@@ -26,9 +28,10 @@ Adafruit_MQTT_FONA mqtt(&fona, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY
 
 HeadingSensor *heading;
 GPSSensor *gps;
+RPMSensor *rpm;
 StoreEntry *storeEntry;
-SDStore *sdStore;
 LogStore *logStore;
+SDStore *sdStore;
 IOStore *ioStore;
 ProximitySensor proximity1 = ProximitySensor(PIN_SONAR_1, SENSOR_ORIENTATION_N, SENSOR_TYPE_SONAR);
 
@@ -47,6 +50,7 @@ void setup(void)
   fona.setGPRSNetworkSettings(F(FONA_APN), F(""), F(""));
   heading = new HeadingSensor();
   gps = new GPSSensor(&fona);
+  rpm = new RPMSensor(PIN_RPM);
   sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
   ioStore = new IOStore(&fona, &mqtt);
@@ -60,6 +64,8 @@ void loop(void)
   storeEntry = new StoreEntry();
   storeEntry->setHeading(heading->getHeading());
   storeEntry->position = gps->getPosition();
+  storeEntry->rpm = rpm->getRPM();
+  DEBUG(storeEntry->rpm.rpm);
   storeEntry->addProximity(proximity1.getProximity());
   //sdStore->store(storeEntry);
   int ioStatus = ioStore->store(storeEntry);

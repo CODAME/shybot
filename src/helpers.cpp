@@ -18,6 +18,10 @@ void DEBUG(float err) {
   Serial.println(err);
 }
 
+void DEBUG(double err) {
+  Serial.println(err);
+}
+
 void DEBUG(int err) {
   Serial.println(err);
 }

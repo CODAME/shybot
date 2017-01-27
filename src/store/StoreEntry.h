@@ -4,6 +4,7 @@
 #include "../sensor/GPSSensor.h"
 #include "../sensor/HeadingSensor.h"
 #include "../sensor/ProximitySensor.h"
+#include "../sensor/RPMSensor.h"
 
 #define NUM_PROXIMITIES 8
 
@@ -24,10 +25,10 @@ class StoreEntry {
 
     const char* getCSV();
 
-
     HeadingSensor::Heading heading;
     GPSSensor::Position position;
     ProximitySensor::Proximity *proximities[NUM_PROXIMITIES];
+    RPMSensor::RPM rpm;
 
   private:
     int proximityCur = 0;
