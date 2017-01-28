@@ -26,7 +26,9 @@ class Navigator {
       RIGHT = 150,
       SHARP_RIGHT = 180
     };
+
     enum power {
+      REVERSE_HIGH = 78,
       REVERSE = 82,
       STOP = 90,
       SLOW = 105,
@@ -38,12 +40,16 @@ class Navigator {
     Navigator(int drivePin, int steerPin);
 
     void go(StoreEntry *storeEntry);
-    void setSteer(int degrees);
+    void setSteer(turn turn);
+    turn getSteer();
     void setPower(power power);
+    power getPower();
 
   private:
     Servo drive;
     Servo steer;
+    power currentPower;
+    turn currentTurn;
 };
 
 #endif
