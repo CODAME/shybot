@@ -25,13 +25,17 @@ int StoreEntry::setHeading(HeadingSensor::Heading heading) {
 };
 
 int StoreEntry::addProximity(ProximitySensor::Proximity *proximity) {
-  if(proximityCur == NUM_PROXIMITIES -1) {
+  if(proximityCur == MAX_PROXIMITIES - 1) {
     DEBUG(F("Too many proximities."));
     return 1;
   }
   this->proximities[proximityCur++] = proximity;
   return 0;
 };
+
+int StoreEntry::numProximities() {
+  return proximityCur;
+}
 
 const char* StoreEntry::getCSVHeaders() {
   return CSV_HEADER;

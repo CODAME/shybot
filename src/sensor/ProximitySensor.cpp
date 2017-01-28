@@ -6,10 +6,10 @@
 #define SONAR_MAX_DISTANCE 1000
 
 ProximitySensor::ProximitySensor(int pin,
-                                 sensor_orientation orientation,
+                                 sensor_orientation myOrientation,
                                  sensor_type type
                                 ) {
-  orientation = orientation;
+  orientation = myOrientation;
   type = type;
   sonar = new NewPing(pin, pin, SONAR_MAX_DISTANCE);
 };

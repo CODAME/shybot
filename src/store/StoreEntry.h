@@ -6,7 +6,7 @@
 #include "../sensor/ProximitySensor.h"
 #include "../sensor/RPMSensor.h"
 
-#define NUM_PROXIMITIES 8
+#define MAX_PROXIMITIES 8
 
 class StoreEntry {
   public:
@@ -16,6 +16,8 @@ class StoreEntry {
     int setHeading(HeadingSensor::Heading heading);
 
     int addProximity(ProximitySensor::Proximity *proximity);
+
+    int numProximities();
 
     const char* getCSVHeaders();
 
@@ -27,7 +29,7 @@ class StoreEntry {
 
     HeadingSensor::Heading heading;
     GPSSensor::Position position;
-    ProximitySensor::Proximity *proximities[NUM_PROXIMITIES];
+    ProximitySensor::Proximity *proximities[MAX_PROXIMITIES];
     RPMSensor::RPM rpm;
 
   private:

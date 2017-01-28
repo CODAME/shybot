@@ -14,12 +14,16 @@
 #include "store/SDStore.h"
 #include "store/LogStore.h"
 #include "store/IOStore.h"
+#include "navigation/navigator.h"
 
-#define PIN_SD_CS 4
-#define PIN_FONA_RST 13
 
 #define PIN_SONAR_1 A3
+#define PIN_SONAR_2 A2
+#define PIN_SD_CS 4
+#define PIN_STEER 9
+#define PIN_DRIVE 10
 #define PIN_RPM 11
+#define PIN_FONA_RST 13
 
 HardwareSerial *fonaSerial = &Serial1;
 
@@ -33,8 +37,9 @@ StoreEntry *storeEntry;
 LogStore *logStore;
 SDStore *sdStore;
 IOStore *ioStore;
-ProximitySensor proximity1 = ProximitySensor(PIN_SONAR_1, SENSOR_ORIENTATION_N, SENSOR_TYPE_SONAR);
-
+ProximitySensor proximity1 = ProximitySensor(PIN_SONAR_1, SENSOR_ORIENTATION_NW, SENSOR_TYPE_SONAR);
+ProximitySensor proximity2 = ProximitySensor(PIN_SONAR_2, SENSOR_ORIENTATION_NE, SENSOR_TYPE_SONAR);
+Navigator *navigator;
 
 void setup(void)
 {
@@ -54,6 +59,7 @@ void setup(void)
   sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
   ioStore = new IOStore(&fona, &mqtt);
+  navigator = new Navigator(PIN_DRIVE, PIN_STEER);
   pinMode(A5, INPUT);
   digitalWrite(A5, HIGH);
 }
@@ -67,11 +73,13 @@ void loop(void)
   storeEntry->rpm = rpm->getRPM();
   DEBUG(storeEntry->rpm.rpm);
   storeEntry->addProximity(proximity1.getProximity());
+  storeEntry->addProximity(proximity2.getProximity());
   //sdStore->store(storeEntry);
   int ioStatus = ioStore->store(storeEntry);
   if(ioStatus != IOSTORE_SUCCESS ) {
     DEBUG(F("Failed to upload store."));
   }
   logStore->store(storeEntry);
+  navigator->go(storeEntry);
   delay(500);
 }
