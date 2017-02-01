@@ -74,7 +74,7 @@ void loop(void)
   DEBUG(storeEntry->rpm.rpm);
   storeEntry->addProximity(proximity1.getProximity());
   storeEntry->addProximity(proximity2.getProximity());
-  //sdStore->store(storeEntry);
+  sdStore->store(storeEntry);
   int ioStatus = ioStore->store(storeEntry);
   if(ioStatus != IOSTORE_SUCCESS ) {
     DEBUG(F("Failed to upload store."));

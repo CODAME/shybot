@@ -27,5 +27,6 @@ class IOStore {
     Adafruit_MQTT_Publish *locationFeed;
     Adafruit_MQTT_Publish *headingFeed;
     Adafruit_MQTT_Publish *speedFeed;
-    Adafruit_MQTT_Publish *proximityNFeed;
+    Adafruit_MQTT_Publish *proximityNEFeed;
+    Adafruit_MQTT_Publish *proximityNWFeed;
 };
