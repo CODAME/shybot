@@ -14,27 +14,9 @@ StoreEntry::StoreEntry() {
 };
 
 StoreEntry::~StoreEntry() {
-  for(int i=0; i<proximityCur; i++) {
-    delete proximities[i];
+  for(int i=0; i<NUM_PROXIMITY; i++) {
+    delete proximity[i];
   }
-}
-
-int StoreEntry::setHeading(HeadingSensor::Heading heading) {
-  this->heading = heading;
-  return 0;
-};
-
-int StoreEntry::addProximity(ProximitySensor::Proximity *proximity) {
-  if(proximityCur == MAX_PROXIMITIES - 1) {
-    DEBUG(F("Too many proximities."));
-    return 1;
-  }
-  this->proximities[proximityCur++] = proximity;
-  return 0;
-};
-
-int StoreEntry::numProximities() {
-  return proximityCur;
 }
 
 const char* StoreEntry::getCSVHeaders() {
@@ -63,21 +45,21 @@ const char* StoreEntry::getCSV() {
     512,
     "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu,%lu",
     sbGetTime(),
-    heading.degrees,
+    position.heading,
     position.lat,
     position.lon,
     position.altitude,
     position.kph,
     rpm.rpm,
     (uint32_t) 0,
-    proximities[0]->distance,
+    proximity[SENSOR_ORIENTATION_NW]->distance,
     (uint32_t) 0,
     (uint32_t) 0,
     (uint32_t) 0,
     (uint32_t) 0,
     (uint32_t) 0,
     (uint32_t) 0,
-    proximities[1]->distance
+    proximity[SENSOR_ORIENTATION_SE]->distance
   );
   return csvbuffer;
 }

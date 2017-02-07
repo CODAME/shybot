@@ -8,12 +8,12 @@ Navigator::status ProximityError::check(StoreEntry *entry, Navigator *navigator)
   ProximitySensor::Proximity *proximity;
   bool hazard = false;
   int distance;
-  for (int i = 0; i < entry->numProximities(); i++) {
-    distance = entry->proximities[i]->distance;
+  for (int i = 0; i < NUM_PROXIMITY; i++) {
+    distance = entry->proximity[i]->distance;
     DEBUG(distance);
     if(distance != 0 && distance <= DISTANCE_THRESHOLD) {
       hazard = true;
-      proximity = entry->proximities[i];
+      proximity = entry->proximity[i];
       break;
     }
   }

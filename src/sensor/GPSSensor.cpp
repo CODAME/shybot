@@ -25,7 +25,7 @@ GPSSensor::Position GPSSensor::getPosition() {
       didSetTime = true;
     }
   }
-  return Position({ latitude, longitude, altitude, speedKPH });
+  return Position({ latitude, longitude, altitude, speedKPH, heading });
 };
 
 //for some reason Network time doesn't work on FONA, but GPS time is accurate ;)

@@ -4,7 +4,7 @@
 
 class GPSSensor {
   public:
-    struct Position { float lat, lon, altitude, kph; };
+    struct Position { float lat, lon, altitude, kph, heading; };
 
     GPSSensor(Adafruit_FONA *fona);
     Position getPosition();

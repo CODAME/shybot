@@ -1,21 +1,11 @@
-#include <NewPing.h>
 #ifndef SB_PROXIMITY
 #define SB_PROXIMITY
+#include <NewPing.h>
+#include <constants.h>
 
 enum sensor_type {
   SENSOR_TYPE_SONAR,
   SENSOR_TYPE_IR
-};
-
-enum sensor_orientation {
-  SENSOR_ORIENTATION_N,
-  SENSOR_ORIENTATION_NW,
-  SENSOR_ORIENTATION_W,
-  SENSOR_ORIENTATION_SW,
-  SENSOR_ORIENTATION_S,
-  SENSOR_ORIENTATION_SE,
-  SENSOR_ORIENTATION_E,
-  SENSOR_ORIENTATION_NE
 };
 
 class ProximitySensor {

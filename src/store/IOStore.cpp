@@ -32,7 +32,7 @@ IOStore::IOStore(Adafruit_FONA *myFona, Adafruit_MQTT_FONA *myMqtt) {
   proximityNWFeed = new Adafruit_MQTT_Publish(mqtt, PROXIMITY_NW_FEED, QOS_LEVEL);
 };
 
-int IOStore::connectNetwork() {
+iostore_status IOStore::connectNetwork() {
   if(fona->getNetworkStatus() != 1) {
     return IOSTORE_NET_NOT_READY;
   }
@@ -48,8 +48,9 @@ int IOStore::connectNetwork() {
   return IOSTORE_SUCCESS;
 }
 
-int IOStore::ensureConnected() {
-  int ready, netStatus;
+iostore_status IOStore::ensureConnected() {
+  int ready;
+  iostore_status netStatus;
   ready = fona->TCPconnected() && txfailures < MAXTXFAILURES;
   //if fona has gone offline since initializing, change status
   if(ready) {
@@ -71,7 +72,7 @@ int IOStore::ensureConnected() {
   }
 }
 
-int IOStore::connectMQTT() {
+iostore_status IOStore::connectMQTT() {
   DEBUG(F("Connecting to MQTT"));
 
   int8_t ret, retries = 5;
@@ -100,19 +101,41 @@ int IOStore::connectMQTT() {
   return IOSTORE_SUCCESS;
 }
 
-int IOStore::store(StoreEntry *entry) {
-  int fonaStatus = ensureConnected();
+iostore_status IOStore::store(StoreEntry *entry) {
+  iostore_status fonaStatus = ensureConnected();
   if(fonaStatus != IOSTORE_SUCCESS) {
     return fonaStatus;
   }
   if  (locationFeed->publish(entry->getCSVLocation())
-    && headingFeed->publish(entry->heading.degrees)
+    && headingFeed->publish(entry->position.heading)
     && speedFeed->publish(entry->position.kph)
-    && proximityNWFeed->publish(entry->proximities[0]->distance)
-    && proximityNEFeed->publish(entry->proximities[1]->distance)
+    && proximityNWFeed->publish(entry->proximity[0]->distance)
+    && proximityNEFeed->publish(entry->proximity[1]->distance)
       ) {
     return IOSTORE_SUCCESS;
   } else {
     return IOSTORE_NET_FAILURE;
   }
+}
+
+iostore_status IOStore::shiftQueue(StoreEntry *entry) {
+  //calling function has responsibility to delete *entry after user.
+  entry = queue.shift();
+  iostore_status ioStatus = store(entry);
+  if(ioStatus != IOSTORE_SUCCESS ) {
+    DEBUG(F("Failed to upload store."));
+  }
+  return ioStatus;
+}
+
+iostore_status IOStore::pushQueue(StoreEntry *entry) {
+  if(queue.size() > QUEUE_SIZE) {
+    delete queue.shift();
+    queue.add(entry);
+  }
+  return IOSTORE_SUCCESS;
+}
+
+int IOStore::queueLen() {
+  return queue.size();
 }
