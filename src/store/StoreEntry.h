@@ -2,10 +2,12 @@
 #define SB_STORENTRY
 #include <Arduino.h>
 #include "../sensor/GPSSensor.h"
+#include "../sensor/MotionSensor.h"
 #include "../sensor/ProximitySensor.h"
 #include "../sensor/RPMSensor.h"
 
 #define NUM_PROXIMITY 8
+#define NUM_MOTION 8
 
 class StoreEntry {
   public:
@@ -26,6 +28,7 @@ class StoreEntry {
 
     GPSSensor::Position position;
     ProximitySensor::Proximity *proximity[NUM_PROXIMITY];
+    MotionSensor::Motion *motion[NUM_MOTION];
     RPMSensor::RPM rpm;
 
 };

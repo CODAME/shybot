@@ -1,30 +1,28 @@
 #ifndef SB_PROXIMITY
 #define SB_PROXIMITY
-#include <NewPing.h>
+#include <Arduino.h>
 #include <constants.h>
 
-enum sensor_type {
-  SENSOR_TYPE_SONAR,
-  SENSOR_TYPE_IR
-};
+#define SB_PROX_TRIGGER_INTERVAL_MS 1000
+#define SB_PROX_TRIGGER_LEN_US 30
+
 
 class ProximitySensor {
   public:
     struct Proximity {
-      int type;
-      int orientation;
+      sensor_orientation orientation;
       uint32_t distance;
     };
 
-    ProximitySensor(int pin, sensor_orientation orientation, sensor_type type);
+    ProximitySensor(int pin, sensor_orientation orientation);
 
     Proximity* getProximity();
+    static void setTriggerPin(int pin);
 
-  private:
-    NewPing *sonar;
+private:
+    void triggerIfNeeded();
     sensor_orientation orientation;
-    sensor_type type;
-
+    int pin;
 };
 
 #endif

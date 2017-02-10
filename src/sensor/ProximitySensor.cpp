@@ -1,20 +1,35 @@
-#include <NewPing.h>
-
 #include "ProximitySensor.h"
 #include "helpers.h"
 
-#define SONAR_MAX_DISTANCE 1000
+int lastTrigger = millis();
+int triggerPin = -1;
 
-ProximitySensor::ProximitySensor(int pin,
-                                 sensor_orientation myOrientation,
-                                 sensor_type type
+ProximitySensor::ProximitySensor(int sensorPin,
+                                 sensor_orientation myOrientation
                                 ) {
+  pin = sensorPin;
   orientation = myOrientation;
-  type = type;
-  sonar = new NewPing(pin, pin, SONAR_MAX_DISTANCE);
 };
 
 ProximitySensor::Proximity* ProximitySensor::getProximity() {
-  uint32_t distance = sonar->convert_cm(sonar->ping_median());
-  return new Proximity({ type, orientation, distance });
+  uint32_t analog = analogRead(pin);
+  return new Proximity({ orientation, analog * 5 });
 };
+
+void ProximitySensor::setTriggerPin(int pin) {
+  pinMode(pin, OUTPUT);
+  digitalWrite(pin, LOW);
+  triggerPin = pin;
+}
+
+void ProximitySensor::triggerIfNeeded() {
+  if(triggerPin != -1 && (millis() - lastTrigger > SB_PROX_TRIGGER_INTERVAL_MS)) {
+    DEBUG("will trigger");
+    lastTrigger = millis();
+    digitalWrite(triggerPin, HIGH);
+    delayMicroseconds(SB_PROX_TRIGGER_LEN_US);
+    delay(10);
+    digitalWrite(triggerPin, LOW);
+    delay(SB_PROX_TRIGGER_INTERVAL_MS);
+  }
+}

@@ -8,9 +8,13 @@
 
 class MotionSensor {
   public:
+    struct Motion {
+      bool moving;
+    };
+
     MotionSensor(Adafruit_MCP23017 *myMcp, sensor_orientation myOrientation);
 
-    bool getMotion();
+    Motion* getMotion();
 
     sensor_orientation orientation;
 

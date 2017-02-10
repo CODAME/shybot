@@ -8,8 +8,8 @@ MotionSensor::MotionSensor(Adafruit_MCP23017 *myMcp, sensor_orientation myOrient
   orientation = myOrientation;
 }
 
-bool MotionSensor::getMotion() {
-  return mcp->digitalRead(getPin());
+MotionSensor::Motion* MotionSensor::getMotion() {
+  return new MotionSensor::Motion({ mcp->digitalRead(getPin()) });
 };
 
 int MotionSensor::getPin() {
