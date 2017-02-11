@@ -102,6 +102,7 @@ void setup(void)
   attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), ISR_onMotion, FALLING);
 
   rpm = new RPMSensor(PIN_RPM);
+  digitalWrite(PIN_PROXIMITY_TRIGGER, LOW);
 
   sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
@@ -127,7 +128,8 @@ void loop(void)
   readSensors();
   sdStore->store(storeEntry);
   logStore->store(storeEntry);
-  navigator->go(storeEntry);
+  //navigator->go(storeEntry);
+  navigator->setSpeed(10.0, Navigator::DIR_FORWARD, storeEntry->rpm);
 
   #if FONA_ENABLED
     if (!DANGER && navigator->getPower() == Navigator::STOP) {
@@ -139,7 +141,5 @@ void loop(void)
       ioStore->pushQueue(storeEntry);
       delay(100);
     }
-  #else
-    delay(200);
   #endif
 }

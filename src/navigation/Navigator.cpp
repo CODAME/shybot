@@ -2,11 +2,11 @@
 #include <Servo.h>
 #include "helpers.h"
 #include "navigation/Navigator.h"
-#include "navigation/error/ProximityError.h"
-#include "navigation/error/RPMError.h"
 
 #define STEER_MAX 180
 #define STEER_MIN 0
+#define SPEED_TOLERANCE_KPH .5
+#define POWER_INCREMENT 10
 
 
 Navigator::Navigator(int drivePin, int steerPin) {
@@ -14,20 +14,31 @@ Navigator::Navigator(int drivePin, int steerPin) {
   steer.attach(steerPin);
 }
 
-void Navigator::go(StoreEntry *storeEntry) {
-  int status = ProximityError::check(storeEntry, this) ||
-    RPMError::check(storeEntry, this);
-  if (status == OK) {
-    setPower(SLOW);
+void Navigator::go(StoreEntry *entry) {
+}
+
+void Navigator::setSpeed(double goalKPH, direction direction, RPMSensor::RPM rpm) {
+  double diff = goalKPH - rpm.kph();
+  double inc = min((diff / goalKPH) * POWER_INCREMENT, POWER_INCREMENT);
+  if (abs(diff) > SPEED_TOLERANCE_KPH) {
+    setPower(currentPower + inc, direction);
   }
 }
 
-void Navigator::setPower(power power) {
+void Navigator::setPower(double power, direction direction) {
+  if (direction != currentDirection) {
+    drive.write(0);
+    delay(300);
+  }
+  if (direction == DIR_FORWARD) {
+    drive.write(map(power, 0, 100, 102, 125));
+  } else {
+    drive.write(map(power, 0, 100, 90, 78));
+  }
   currentPower = power;
-  drive.write(power);
 }
 
-Navigator::power Navigator::getPower() {
+double Navigator::getPower() {
   return currentPower;
 }
 

@@ -5,15 +5,16 @@
 
 #include "store/StoreEntry.h"
 
+#define NUM_PREV_STATES 8
+
 enum {
   PROXIMITY_RANK = 1,
   RPM_RANK = 2
 };
 
-
-
 class Navigator {
   public:
+
     enum status {
       OK,
       HAZARD
@@ -27,28 +28,28 @@ class Navigator {
       SHARP_RIGHT = 180
     };
 
-    enum power {
-      REVERSE_HIGH = 78,
-      REVERSE = 82,
-      STOP = 90,
-      SLOW = 105,
-      CRUISE = 110,
-      RUN = 115,
-      SPRINT = 125
+    enum direction {
+      DIR_FORWARD,
+      DIR_REVERSE
     };
 
     Navigator(int drivePin, int steerPin);
 
-    void go(StoreEntry *storeEntry);
+/*
+    state getState(StoreEntry *entry);
+    */
+    void go(StoreEntry *entry);
     void setSteer(turn turn);
     turn getSteer();
-    void setPower(power power);
-    power getPower();
+    void setSpeed(double goalKPH, direction direction, RPMSensor::RPM rpm);
+    void setPower(double power, direction direction);
+    double getPower();
 
   private:
     Servo drive;
     Servo steer;
-    power currentPower;
+    double currentPower = 0;
+    direction currentDirection = DIR_FORWARD;
     turn currentTurn;
 };
 
