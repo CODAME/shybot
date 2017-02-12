@@ -40,7 +40,7 @@ class Navigator {
 
     enum severity {
       SEV_PROXIMITY = 1000,
-      SEV_MOTION = 100000
+      SEV_MOTION = 100
     };
 
     struct Hazard {
@@ -77,6 +77,13 @@ class Navigator {
     turn currentTurn;
     int lenSuggestions = 0;
     Suggestion suggestions[NUM_SUGGESTIONS] = {
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
       Suggestion({ 0, 0, 0}),
       Suggestion({ 0, 0, 0}),
       Suggestion({ 0, 0, 0}),

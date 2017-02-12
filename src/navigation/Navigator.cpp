@@ -37,8 +37,8 @@ void Navigator::findSuggestions(StoreEntry *entry) {
   Suggestion *cur;
   for (int i=0; i<NUM_PROXIMITY; i++) {
     ProximitySensor::Proximity *prox = entry->proximity[i];
-    if (prox == nullptr) { continue; }
-    double weight = 1 + log((double)(SEV_PROXIMITY) / (double) (prox->distance));
+    if (prox->distance == 0) { continue; }
+    double weight = 1 + log((double)(SEV_PROXIMITY) / (double) (prox->distance - 300));
     int heading = (sensor_heading[prox->orientation] + 180) % 360;
     cur = &suggestions[lenSuggestions++];
     cur->weight = weight;
@@ -47,8 +47,7 @@ void Navigator::findSuggestions(StoreEntry *entry) {
   }
   for (int i=0; i<NUM_MOTION; i++) {
     MotionSensor::Motion *motion = entry->motion[i];
-    if (motion == nullptr) { continue; }
-    double weight = 1 + log(SEV_MOTION);
+    double weight = motion->moving ? SEV_MOTION : 0;
     int heading = (sensor_heading[motion->orientation] + 180) % 360;
     cur = &suggestions[lenSuggestions++];
     cur->weight = weight;
