@@ -11,9 +11,10 @@ ProximitySensor::ProximitySensor(int sensorPin,
   orientation = myOrientation;
 };
 
-ProximitySensor::Proximity* ProximitySensor::getProximity() {
+void ProximitySensor::getProximity(Proximity *proximity) {
   uint32_t analog = analogRead(pin);
-  return new Proximity({ orientation, analog * 5 });
+  proximity->orientation = orientation;
+  proximity->distance = analog * 5;
 };
 
 void ProximitySensor::setTriggerPin(int pin) {

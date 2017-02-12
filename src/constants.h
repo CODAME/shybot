@@ -12,4 +12,5 @@ enum sensor_orientation {
   SENSOR_ORIENTATION_NE
 };
 
+extern int sensor_heading[8];
 #endif

@@ -16,7 +16,7 @@ class ProximitySensor {
 
     ProximitySensor(int pin, sensor_orientation orientation);
 
-    Proximity* getProximity();
+    void getProximity(Proximity *proximity);
     static void setTriggerPin(int pin);
 
 private:

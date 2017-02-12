@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include "helpers.h"
+#include "constants.h"
 #include "navigation/Navigator.h"
 
 #define STEER_MAX 180
@@ -8,13 +9,52 @@
 #define SPEED_TOLERANCE_KPH .5
 #define POWER_INCREMENT 10
 
-
 Navigator::Navigator(int drivePin, int steerPin) {
   drive.attach(drivePin);
   steer.attach(steerPin);
 }
 
 void Navigator::go(StoreEntry *entry) {
+}
+
+void Navigator::averageSuggestions() {
+  double sumWeights = 0;
+  Suggestion *cur;
+  for(int i=0; i<lenSuggestions; i++) {
+    if(suggestions[i].weight == 0 ) { continue; }
+    cur = &suggestions[i];
+    sumWeights += cur->weight;
+    avgSuggestion.heading += cur->weight * cur->heading;
+    avgSuggestion.speed += cur->weight * cur->speed;
+  }
+
+  avgSuggestion.heading /= sumWeights;
+  avgSuggestion.speed /= sumWeights;
+}
+
+void Navigator::findSuggestions(StoreEntry *entry) {
+  lenSuggestions = 0;
+  Suggestion *cur;
+  for (int i=0; i<NUM_PROXIMITY; i++) {
+    ProximitySensor::Proximity *prox = entry->proximity[i];
+    if (prox == nullptr) { continue; }
+    double weight = 1 + log((double)(SEV_PROXIMITY) / (double) (prox->distance));
+    int heading = (sensor_heading[prox->orientation] + 180) % 360;
+    cur = &suggestions[lenSuggestions++];
+    cur->weight = weight;
+    cur->heading = heading;
+    cur->speed = 10;
+  }
+  for (int i=0; i<NUM_MOTION; i++) {
+    MotionSensor::Motion *motion = entry->motion[i];
+    if (motion == nullptr) { continue; }
+    double weight = 1 + log(SEV_MOTION);
+    int heading = (sensor_heading[motion->orientation] + 180) % 360;
+    cur = &suggestions[lenSuggestions++];
+    cur->weight = weight;
+    cur->heading = heading;
+    cur->speed = 80;
+  }
 }
 
 void Navigator::setSpeed(double goalKPH, direction direction, RPMSensor::RPM rpm) {

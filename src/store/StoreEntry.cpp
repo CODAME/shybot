@@ -5,12 +5,18 @@
 
 #include <stdio.h>
 
-#define CSV_HEADER "timestamp,heading,latitude,longitude,altitude,proximity_N,proximity_NE,proximity_E,proximity_S,proximity_W,proximity_NW,motion_N,motion_E,motion_S,motion_W"
+#define CSV_HEADER "timestamp,heading,latitude,longitude,altitude,kph,rpm,proximity_N,proximity_NE,proximity_E,proximity_S,proximity_W,proximity_NW,motion_N,motion_E,motion_S,motion_W"
 
 
 char csvbuffer[512];
 
 StoreEntry::StoreEntry() {
+  for(int i=0; i<NUM_PROXIMITY; i++) {
+    proximity[i] = new ProximitySensor::Proximity({ (sensor_orientation) i, 0 });
+  }
+  for(int i=0; i<NUM_MOTION; i++) {
+    motion[i] = new MotionSensor::Motion({ (sensor_orientation) i, 0 });
+  }
 };
 
 StoreEntry::~StoreEntry() {

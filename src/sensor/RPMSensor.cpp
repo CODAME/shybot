@@ -25,12 +25,13 @@ RPMSensor::~RPMSensor() {
   detachInterrupt(digitalPinToInterrupt(rpmPin));
 }
 
-RPMSensor::RPM RPMSensor::getRPM() {
+void RPMSensor::getRPM(RPMSensor::RPM *rpm) {
   double seconds = (millis() - startTime) / 1000;
-  double rpm = (dRotations * MINUTES_PER_HOUR) / seconds;
+  double currentRpm = (dRotations * MINUTES_PER_HOUR) / seconds;
   if (seconds > .5) {
     startTime = millis();
     dRotations = 0;
   }
-  return RPM({ rpm, rotations });
+  rpm->rpm = currentRpm;
+  rpm->rotations = rotations;
 }

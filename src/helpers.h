@@ -8,6 +8,8 @@ uint32_t sbGetTime();
 
 int sbSetTimeOffset(time_t currentTime);
 
+int freeRam();
+
 void DEBUG(String err);
 void DEBUG(const char *err);
 void DEBUG(float err);

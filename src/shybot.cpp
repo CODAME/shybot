@@ -44,37 +44,44 @@ StoreEntry *storeEntry;
 LogStore *logStore;
 SDStore *sdStore;
 IOStore *ioStore;
-ProximitySensor proximityN  = ProximitySensor(A1, SENSOR_ORIENTATION_N);
-ProximitySensor proximityNE = ProximitySensor(A2, SENSOR_ORIENTATION_NE);
-ProximitySensor proximityE  = ProximitySensor(A3, SENSOR_ORIENTATION_E);
-ProximitySensor proximityS  = ProximitySensor(A4, SENSOR_ORIENTATION_S);
-ProximitySensor proximityW  = ProximitySensor(A5, SENSOR_ORIENTATION_W);
-ProximitySensor proximityNW = ProximitySensor(A6, SENSOR_ORIENTATION_NW);
-MotionSensor motionN = MotionSensor(&mcp, SENSOR_ORIENTATION_N);
-MotionSensor motionE = MotionSensor(&mcp, SENSOR_ORIENTATION_E);
-MotionSensor motionS = MotionSensor(&mcp, SENSOR_ORIENTATION_S);
-MotionSensor motionW = MotionSensor(&mcp, SENSOR_ORIENTATION_W);
 Navigator *navigator;
-
-volatile bool DANGER = false;
-
+ProximitySensor *proximitySensors[NUM_PROXIMITY] = {
+  new ProximitySensor(A0, SENSOR_ORIENTATION_N),
+  new ProximitySensor(A1, SENSOR_ORIENTATION_NE),
+  new ProximitySensor(A2, SENSOR_ORIENTATION_E),
+  nullptr,
+  new ProximitySensor(A3, SENSOR_ORIENTATION_S),
+  nullptr,
+  new ProximitySensor(A4, SENSOR_ORIENTATION_W),
+  new ProximitySensor(A5, SENSOR_ORIENTATION_NW)
+};
+MotionSensor *motionSensors[NUM_MOTION] = {
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_N),
+  nullptr,
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_E),
+  nullptr,
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_S),
+  nullptr,
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_W),
+  nullptr
+};
 
 void readSensors() {
   #if FONA_ENABLED
-  storeEntry->position = gps->getPosition();
+    storeEntry->position = gps->getPosition();
   #endif
-  storeEntry->rpm = rpm->getRPM();
-  storeEntry->proximity[SENSOR_ORIENTATION_N]  = proximityN.getProximity();
-  storeEntry->proximity[SENSOR_ORIENTATION_NE] = proximityNE.getProximity();
-  storeEntry->proximity[SENSOR_ORIENTATION_E]  = proximityE.getProximity();
-  storeEntry->proximity[SENSOR_ORIENTATION_S]  = proximityS.getProximity();
-  storeEntry->proximity[SENSOR_ORIENTATION_W]  = proximityW.getProximity();
-  storeEntry->proximity[SENSOR_ORIENTATION_NW] = proximityNW.getProximity();
-  storeEntry->motion[SENSOR_ORIENTATION_N] = motionN.getMotion();
-  storeEntry->motion[SENSOR_ORIENTATION_E] = motionE.getMotion();
-  storeEntry->motion[SENSOR_ORIENTATION_S] = motionS.getMotion();
-  storeEntry->motion[SENSOR_ORIENTATION_W] = motionW.getMotion();
+  rpm->getRPM(&storeEntry->rpm);
+  for(int i=0; i<NUM_PROXIMITY; i++) {
+    if(proximitySensors[i] == nullptr) { continue; }
+    proximitySensors[i]->getProximity(storeEntry->proximity[i]);
+  }
+  for(int i=0; i<NUM_MOTION; i++) {
+    if(motionSensors[i] == nullptr) { continue; }
+    motionSensors[i]->getMotion(storeEntry->motion[i]);
+  }
 }
+
+volatile bool DANGER = false;
 
 void ISR_onMotion() {
     DANGER = true;
@@ -119,7 +126,7 @@ void uploadQueued() {
     }
   #endif
 }
-
+Navigator::Suggestion suggestion;
 void loop(void)
 {
   if(DANGER) {
@@ -129,7 +136,13 @@ void loop(void)
   sdStore->store(storeEntry);
   logStore->store(storeEntry);
   //navigator->go(storeEntry);
-  navigator->setSpeed(10.0, Navigator::DIR_FORWARD, storeEntry->rpm);
+  //navigator->setSpeed(10.0, Navigator::DIR_FORWARD, storeEntry->rpm);
+  navigator->findSuggestions(storeEntry);
+  navigator->averageSuggestions();
+  Serial.print("HEADING: ");
+  Serial.println(navigator->avgSuggestion.heading);
+  Serial.print("SPEED: ");
+  Serial.println(navigator->avgSuggestion.speed);
 
   #if FONA_ENABLED
     if (!DANGER && navigator->getPower() == Navigator::STOP) {
@@ -142,4 +155,5 @@ void loop(void)
       delay(100);
     }
   #endif
+  delay(200);
 }

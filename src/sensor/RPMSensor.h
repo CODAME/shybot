@@ -28,7 +28,7 @@ class RPMSensor {
     RPMSensor(int rpmPin);
     ~RPMSensor();
 
-    RPM getRPM();
+    void getRPM(RPM *rpm);
 
   private:
     int rpmPin;

@@ -7,6 +7,7 @@ LogStore::LogStore() {
 };
 
 int LogStore::store(StoreEntry *entry) {
+  Serial.println(entry->getCSVHeaders());
   Serial.println(entry->getCSV());
   return 0;
 };

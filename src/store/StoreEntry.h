@@ -27,9 +27,9 @@ class StoreEntry {
     const char* getCSV();
 
     GPSSensor::Position position;
-    ProximitySensor::Proximity *proximity[NUM_PROXIMITY];
-    MotionSensor::Motion *motion[NUM_MOTION];
-    RPMSensor::RPM rpm;
+    ProximitySensor::Proximity *proximity[NUM_PROXIMITY] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+    MotionSensor::Motion *motion[NUM_MOTION] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
+    RPMSensor::RPM rpm = RPMSensor::RPM({ 0, 0});
 
 };
 #endif
