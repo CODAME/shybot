@@ -9,7 +9,9 @@ class LogStore {
   public:
     LogStore();
 
-    int store(StoreEntry* entry);
+    int store(StoreEntry *entry);
+
+    int graph(StoreEntry *entry);
 
 };
 #endif

@@ -4,18 +4,22 @@
 int lastTrigger = millis();
 int triggerPin = -1;
 
-ProximitySensor::ProximitySensor(int sensorPin,
+ProximitySensor::ProximitySensor(MCP3008 *adc,
                                  sensor_orientation myOrientation
                                 ) {
-  pin = sensorPin;
+  _adc = adc;
   orientation = myOrientation;
 };
 
 void ProximitySensor::getProximity(Proximity *proximity) {
-  uint32_t analog = analogRead(pin);
+  uint32_t analog = _adc->readADC(getChannel());
   proximity->orientation = orientation;
   proximity->distance = analog * 5;
 };
+
+int ProximitySensor::getChannel() {
+  return adc_pin[orientation];
+}
 
 void ProximitySensor::setTriggerPin(int pin) {
   pinMode(pin, OUTPUT);

@@ -1,9 +1,11 @@
 #include <Arduino.h>
 #include <Wire.h>
+#include <SPI.h>
 #include <Adafruit_FONA.h>
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_FONA.h>
 #include <Adafruit_MCP23017.h>
+#include <MCP3008.h>
 
 #include "credentials.h"
 #include "constants.h"
@@ -20,6 +22,7 @@
 
 
 #define PIN_SD_CS 4
+#define PIN_ADC_CS A5
 #define PIN_MCP_INTERRUPT 5
 #define PIN_PROXIMITY_TRIGGER 6
 #define PIN_STEER 9
@@ -37,6 +40,8 @@ Adafruit_MQTT_FONA mqtt(&fona, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY
 
 
 Adafruit_MCP23017 mcp;
+MCP3008 adc = MCP3008(PIN_ADC_CS);
+
 
 GPSSensor *gps;
 RPMSensor *rpm;
@@ -46,14 +51,14 @@ SDStore *sdStore;
 IOStore *ioStore;
 Navigator *navigator;
 ProximitySensor *proximitySensors[NUM_PROXIMITY] = {
-  new ProximitySensor(A0, SENSOR_ORIENTATION_N),
-  new ProximitySensor(A1, SENSOR_ORIENTATION_NE),
-  new ProximitySensor(A2, SENSOR_ORIENTATION_E),
+  new ProximitySensor(&adc, SENSOR_ORIENTATION_N),
+  new ProximitySensor(&adc, SENSOR_ORIENTATION_NE),
+  new ProximitySensor(&adc, SENSOR_ORIENTATION_E),
   nullptr,
-  new ProximitySensor(A3, SENSOR_ORIENTATION_S),
+  new ProximitySensor(&adc, SENSOR_ORIENTATION_S),
   nullptr,
-  new ProximitySensor(A4, SENSOR_ORIENTATION_W),
-  new ProximitySensor(A5, SENSOR_ORIENTATION_NW)
+  new ProximitySensor(&adc, SENSOR_ORIENTATION_W),
+  new ProximitySensor(&adc, SENSOR_ORIENTATION_NW)
 };
 MotionSensor *motionSensors[NUM_MOTION] = {
   new MotionSensor(&mcp, SENSOR_ORIENTATION_N),
@@ -75,10 +80,12 @@ void readSensors() {
     if(proximitySensors[i] == nullptr) { continue; }
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
   }
+  /*
   for(int i=0; i<NUM_MOTION; i++) {
     if(motionSensors[i] == nullptr) { continue; }
     motionSensors[i]->getMotion(storeEntry->motion[i]);
   }
+  */
 }
 
 volatile bool DANGER = false;
@@ -109,7 +116,10 @@ void setup(void)
   attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), ISR_onMotion, FALLING);
 
   rpm = new RPMSensor(PIN_RPM);
+
   digitalWrite(PIN_PROXIMITY_TRIGGER, LOW);
+  SPI.begin();
+  adc.begin();
 
   sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
@@ -134,15 +144,14 @@ void loop(void)
   }
   readSensors();
   sdStore->store(storeEntry);
-  logStore->store(storeEntry);
-  //navigator->go(storeEntry);
-  //navigator->setSpeed(10.0, Navigator::DIR_FORWARD, storeEntry->rpm);
-  navigator->findSuggestions(storeEntry);
-  navigator->averageSuggestions();
-  Serial.print("HEADING: ");
-  Serial.println(navigator->avgSuggestion.heading);
-  Serial.print("SPEED: ");
-  Serial.println(navigator->avgSuggestion.speed);
+  logStore->graph(storeEntry);
+  navigator->go(storeEntry);
+  //Serial.println("KPH");
+  //Serial.println(storeEntry->rpm.kph());
+  //Serial.print("HEADING: ");
+  //Serial.println(navigator->avgSuggestion.heading);
+  //Serial.print("SPEED: ");
+  //Serial.println(navigator->avgSuggestion.speed);
 
   #if FONA_ENABLED
     if (!DANGER && navigator->getPower() == Navigator::STOP) {

@@ -27,11 +27,14 @@ RPMSensor::~RPMSensor() {
 
 void RPMSensor::getRPM(RPMSensor::RPM *rpm) {
   double seconds = (millis() - startTime) / 1000;
-  double currentRpm = (dRotations * MINUTES_PER_HOUR) / seconds;
-  if (seconds > .5) {
+  double currentRpm = (double)(dRotations * MINUTES_PER_HOUR) / seconds;
+  if (seconds < 1) {
+    rpm->rpm = lastRpm;
+  } else {
     startTime = millis();
     dRotations = 0;
+    rpm->rpm = currentRpm;
+    lastRpm = currentRpm;
   }
-  rpm->rpm = currentRpm;
   rpm->rotations = rotations;
 }

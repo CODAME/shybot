@@ -32,6 +32,7 @@ class RPMSensor {
 
   private:
     int rpmPin;
+    int lastRpm = 0;
 
 };
 

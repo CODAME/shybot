@@ -6,7 +6,7 @@
 
 #include "store/StoreEntry.h"
 
-#define NUM_SUGGESTIONS NUM_PROXIMITY + NUM_MOTION
+#define NUM_SUGGESTIONS 20
 
 enum {
   PROXIMITY_RANK = 1,
@@ -43,13 +43,6 @@ class Navigator {
       SEV_MOTION = 100
     };
 
-    struct Hazard {
-      double heading;
-      int distance;
-      hazard_type type;
-      time_t timestamp;
-    };
-
     struct Suggestion {
       double weight;
       int heading;
@@ -59,11 +52,13 @@ class Navigator {
     Navigator(int drivePin, int steerPin);
 
     void go(StoreEntry *entry);
-    void findSuggestions(StoreEntry *entry);
+    void backup(double heading = 0);
+    void followSuggestion(Suggestion *suggestion);
+    void makeSuggestions();
     void averageSuggestions();
     void setSteer(turn turn);
     turn getSteer();
-    void setSpeed(double goalKPH, direction direction, RPMSensor::RPM rpm);
+    void setSpeed(double goalKPH, direction direction);
     void setPower(double power, direction direction);
     double getPower();
 
@@ -72,11 +67,18 @@ class Navigator {
   private:
     Servo drive;
     Servo steer;
+    StoreEntry *currentEntry;
     double currentPower = 0;
     direction currentDirection = DIR_FORWARD;
     turn currentTurn;
     int lenSuggestions = 0;
     Suggestion suggestions[NUM_SUGGESTIONS] = {
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
+      Suggestion({ 0, 0, 0}),
       Suggestion({ 0, 0, 0}),
       Suggestion({ 0, 0, 0}),
       Suggestion({ 0, 0, 0}),
