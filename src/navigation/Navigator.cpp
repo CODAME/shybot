@@ -7,7 +7,9 @@
 #define STEER_MAX 180
 #define STEER_MIN 0
 #define SPEED_TOLERANCE_KPH .5
-#define POWER_INCREMENT 2
+#define POWER_INCREMENT 1
+
+#define PIN_REVLIGHT 8
 
 Navigator::Navigator(int drivePin, int steerPin) {
   drive.attach(drivePin);
@@ -19,57 +21,67 @@ void Navigator::go(StoreEntry *entry) {
   makeSuggestions();
   averageSuggestions();
   followSuggestion(&avgSuggestion);
+  pinMode(PIN_REVLIGHT, OUTPUT);
 }
 
 void Navigator::backup(double heading) {
   DEBUG("backing up");
-  if (currentEntry->proximity[SENSOR_ORIENTATION_E]->distance < 500 &&
-      currentEntry->proximity[SENSOR_ORIENTATION_W]->distance < 500) {
+  digitalWrite(PIN_REVLIGHT, HIGH);
+  if (currentEntry->proximity[SENSOR_ORIENTATION_E]->distance < 350 &&
+      currentEntry->proximity[SENSOR_ORIENTATION_W]->distance < 350) {
     setSteer(CENTER);
-  } else if (currentEntry->proximity[SENSOR_ORIENTATION_E]->distance < 500) {
+  } else if (currentEntry->proximity[SENSOR_ORIENTATION_E]->distance < 350) {
     setSteer(LEFT);
-  } else if (currentEntry->proximity[SENSOR_ORIENTATION_W]->distance < 500) {
+  } else if (currentEntry->proximity[SENSOR_ORIENTATION_W]->distance < 350) {
     setSteer(RIGHT);
   } else {
     if(heading < 180) {
-      setSteer(RIGHT);
-    } else {
       setSteer(LEFT);
+    } else {
+      setSteer(RIGHT);
     }
   }
   setSpeed(7, DIR_REVERSE);
 }
 
 void Navigator::followSuggestion(Suggestion *suggestion) {
-  if (suggestion->heading < 45 ) {
+  digitalWrite(PIN_REVLIGHT, LOW);
+  double heading = suggestion->heading;
+  if (heading < 10 && heading > -10 ) {
+    setSteer(CENTER);
+    setSpeed(suggestion->speed, DIR_FORWARD);
+  } else if (heading > 10 && heading < 30 ) {
     setSteer(RIGHT);
     setSpeed(suggestion->speed, DIR_FORWARD);
-  } else if (suggestion->heading < 110) {
-    setSteer(SHARP_RIGHT);
-    setSpeed(suggestion->speed, DIR_FORWARD);
-  } else if (suggestion->heading < 250) {
-    backup(suggestion->heading);
-  } else if (suggestion->heading < 315) {
-    setSteer(SHARP_LEFT);
-    setSpeed(suggestion->speed, DIR_FORWARD);
-  } else {
+  } else if (heading < -10 && heading > -30 ) {
     setSteer(LEFT);
     setSpeed(suggestion->speed, DIR_FORWARD);
+  } else if (heading > 10 && heading < 55){
+    setSteer(RIGHT);
+    setSpeed(suggestion->speed, DIR_FORWARD);
+  } else if (heading < -10 && heading < -55) {
+    setSteer(LEFT);
+    setSpeed(suggestion->speed, DIR_FORWARD);
+  } else {
+    backup(suggestion->heading);
   }
 }
 
 void Navigator::averageSuggestions() {
   double sumWeights = 0;
   Suggestion *cur;
+  double sumSin = 0;
+  double sumCos = 0;
   for(int i=0; i<lenSuggestions; i++) {
     if(suggestions[i].weight == 0 ) { continue; }
     cur = &suggestions[i];
     sumWeights += cur->weight;
-    avgSuggestion.heading += cur->weight * cur->heading;
+    sumSin += cur->weight * sin(cur->heading * M_PI / 180);
+    sumCos += cur->weight * cos(cur->heading * M_PI / 180);
     avgSuggestion.speed += cur->weight * cur->speed;
   }
 
-  avgSuggestion.heading /= sumWeights;
+  avgSuggestion.heading  = (180 / M_PI) * atan2(sumSin / sumWeights, sumCos / sumWeights);
   avgSuggestion.speed /= sumWeights;
 }
 
@@ -78,32 +90,39 @@ void Navigator::makeSuggestions() {
   Suggestion *cur = &suggestions[lenSuggestions++];
   //set first to prefer forward movement
   cur->heading = 0;
-  cur->speed = 3;
-  cur->weight = 10;
+  cur->speed = 5;
+  cur->weight = 3;
   for (int i=0; i<NUM_PROXIMITY; i++) {
     ProximitySensor::Proximity *prox = currentEntry->proximity[i];
     if (prox->distance == 0) { continue; }
-    double weight = (double) 1 / pow(.001 *(prox->distance - 300), 2);
-    //Serial.println(String("PROX ") + i + ": HEADING: " + prox->orientation + " WEIGHT: " + weight + " DISTANCE: " + prox->distance);
-    int heading = (sensor_heading[prox->orientation] + 180) % 360;
+    double weight = proximity_weight[prox->orientation] * (double) SEV_PROXIMITY / (prox->distance - 250);
+    int heading = sensor_heading[prox->orientation] + 180;
+    Serial.println(String("HEADING ") + heading +  " WEIGHT: " + weight + " DISTANCE: " + prox->distance);
     cur = &suggestions[lenSuggestions++];
     cur->weight = weight;
     cur->heading = heading;
-    cur->speed = 10;
+    cur->speed = 5;
   }
+  if(millis() < 1000) { return; } //give PIRs time to warm up
   for (int i=0; i<NUM_MOTION; i++) {
     MotionSensor::Motion *motion = currentEntry->motion[i];
     double weight = motion->moving ? SEV_MOTION : 0;
-    int heading = (sensor_heading[motion->orientation] + 180) % 360;
+    int heading = (sensor_heading[motion->orientation] + 180) ;
+    Serial.println(String("HEADING ") + heading +  " WEIGHT: " + weight);
     cur = &suggestions[lenSuggestions++];
     cur->weight = weight;
     cur->heading = heading;
-    cur->speed = 20;
+    cur->speed = 80;
   }
 }
 
 void Navigator::setSpeed(double goalKPH, direction direction) {
-  DEBUG(currentEntry->rpm.kph());
+  if (direction != currentDirection) {
+    DEBUG("SWITCHING");
+    currentPower = 40;
+    drive.write(90);
+    delay(1000);
+  }
   double diff = goalKPH - currentEntry->rpm.kph();
   double inc = constrain((diff / goalKPH) * POWER_INCREMENT, -POWER_INCREMENT, POWER_INCREMENT);
   if (abs(diff) > SPEED_TOLERANCE_KPH) {
@@ -112,18 +131,10 @@ void Navigator::setSpeed(double goalKPH, direction direction) {
 }
 
 void Navigator::setPower(double power, direction direction) {
-  if (direction != currentDirection) {
-    currentPower = 50;
-    drive.write(90);
-    delay(300);
-    drive.write(currentDirection == DIR_FORWARD ? 82 : 105);
-    delay(300);
-  }
-  DEBUG(String("POWER: ") + power + "DIR: " + direction);
   if (direction == DIR_FORWARD) {
-    drive.write(map(power, 0, 100, 98, 125));
+    drive.write(map(power, 0, 100, 90, MAX_THROTTLE));
   } else {
-    int mappedPower = map(power, 0, 100, 86, 50);
+    int mappedPower = map(power, 0, 100, 90, MIN_THROTTLE);
     drive.write(mappedPower);
   }
   currentDirection = direction;
@@ -137,6 +148,14 @@ double Navigator::getPower() {
 void Navigator::setSteer(turn turn) {
   currentTurn = turn;
   steer.write(turn);
+}
+
+void Navigator::calibrate() {
+    drive.write(MAX_THROTTLE);
+    delay(2000);
+    drive.write(MIN_THROTTLE);
+    delay(2000);
+    drive.write(90);
 }
 
 Navigator::turn Navigator::getSteer() {

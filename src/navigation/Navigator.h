@@ -7,6 +7,8 @@
 #include "store/StoreEntry.h"
 
 #define NUM_SUGGESTIONS 20
+#define MAX_THROTTLE 135
+#define MIN_THROTTLE 50
 
 enum {
   PROXIMITY_RANK = 1,
@@ -40,7 +42,7 @@ class Navigator {
 
     enum severity {
       SEV_PROXIMITY = 1000,
-      SEV_MOTION = 100
+      SEV_MOTION = 100000
     };
 
     struct Suggestion {
@@ -61,6 +63,7 @@ class Navigator {
     void setSpeed(double goalKPH, direction direction);
     void setPower(double power, direction direction);
     double getPower();
+    void calibrate();
 
     Suggestion avgSuggestion = Suggestion({ 0, 0, 0});
 
@@ -71,6 +74,7 @@ class Navigator {
     double currentPower = 0;
     direction currentDirection = DIR_FORWARD;
     turn currentTurn;
+    float proximity_weight[NUM_PROXIMITY] = { 1, 1, .4, 0, 3, 0, .4, 1 };
     int lenSuggestions = 0;
     Suggestion suggestions[NUM_SUGGESTIONS] = {
       Suggestion({ 0, 0, 0}),

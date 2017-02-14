@@ -80,12 +80,10 @@ void readSensors() {
     if(proximitySensors[i] == nullptr) { continue; }
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
   }
-  /*
   for(int i=0; i<NUM_MOTION; i++) {
     if(motionSensors[i] == nullptr) { continue; }
     motionSensors[i]->getMotion(storeEntry->motion[i]);
   }
-  */
 }
 
 volatile bool DANGER = false;
@@ -97,6 +95,8 @@ void ISR_onMotion() {
 void setup(void)
 {
   Serial.begin(9600);
+  navigator = new Navigator(PIN_DRIVE, PIN_STEER);
+  navigator->calibrate();
 
   #if FONA_ENABLED
   fonaSerial->begin(4800);
@@ -124,7 +124,6 @@ void setup(void)
   sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
   storeEntry = new StoreEntry();
-  navigator = new Navigator(PIN_DRIVE, PIN_STEER);
 }
 
 void uploadQueued() {
@@ -148,8 +147,8 @@ void loop(void)
   navigator->go(storeEntry);
   //Serial.println("KPH");
   //Serial.println(storeEntry->rpm.kph());
-  //Serial.print("HEADING: ");
-  //Serial.println(navigator->avgSuggestion.heading);
+  Serial.print("HEADING: ");
+  Serial.println(navigator->avgSuggestion.heading);
   //Serial.print("SPEED: ");
   //Serial.println(navigator->avgSuggestion.speed);
 
