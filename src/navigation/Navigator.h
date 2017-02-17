@@ -7,7 +7,8 @@
 #include "store/StoreEntry.h"
 
 #define NUM_SUGGESTIONS 20
-#define MAX_THROTTLE 135
+//#define MAX_THROTTLE 135
+#define MAX_THROTTLE 115
 #define MIN_THROTTLE 50
 
 enum {
@@ -45,6 +46,12 @@ class Navigator {
       SEV_MOTION = 100000
     };
 
+    enum nav_mode {
+      STOP,
+      SCAN,
+      RUN
+    };
+
     struct Suggestion {
       double weight;
       int heading;
@@ -55,9 +62,16 @@ class Navigator {
 
     void go(StoreEntry *entry);
     void backup(double heading = 0);
-    void followSuggestion(Suggestion *suggestion);
-    void makeSuggestions();
-    void averageSuggestions();
+    void run(int heading);
+    void search();
+    void safelyFollowHeading(int heading, int speed = 5);
+    void followHeading(int heading, int speed = 5);
+    int getMotionHeading();
+    int getApproachHeading();
+    ProximitySensor::Proximity* getMinProximity();
+    ProximitySensor::Proximity* getMaxProximity();
+    bool getDanger();
+    double getAvgProximity();
     void setSteer(turn turn);
     turn getSteer();
     void setSpeed(double goalKPH, direction direction);
@@ -75,29 +89,11 @@ class Navigator {
     direction currentDirection = DIR_FORWARD;
     turn currentTurn;
     float proximity_weight[NUM_PROXIMITY] = { 1, 1, .4, 0, 3, 0, .4, 1 };
-    int lenSuggestions = 0;
-    Suggestion suggestions[NUM_SUGGESTIONS] = {
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0}),
-      Suggestion({ 0, 0, 0})
-    };
+    uint32_t timer = 0;
+    uint32_t backupStart = 0;
+    uint32_t lastDanger = 0;
+    int initMotionHeading = 0;
+    int mode = STOP;
 
 };
 

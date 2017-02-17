@@ -14,18 +14,20 @@ int LogStore::store(StoreEntry *entry) {
 
 int LogStore::graph(StoreEntry *entry) {
   uint32_t pn = entry->proximity[SENSOR_ORIENTATION_N]->distance;
+  double tn = entry->proximity[SENSOR_ORIENTATION_N]->delta;
   uint32_t pne = entry->proximity[SENSOR_ORIENTATION_NE]->distance;
+  double tne = entry->proximity[SENSOR_ORIENTATION_NE]->delta;
   uint32_t pnw = entry->proximity[SENSOR_ORIENTATION_NW]->distance;
+  double tnw = entry->proximity[SENSOR_ORIENTATION_NW]->delta;
   uint32_t pw = entry->proximity[SENSOR_ORIENTATION_W]->distance;
+  double tw = entry->proximity[SENSOR_ORIENTATION_W]->delta;
   uint32_t pe = entry->proximity[SENSOR_ORIENTATION_E]->distance;
+  double te = entry->proximity[SENSOR_ORIENTATION_E]->delta;
   uint32_t ps = entry->proximity[SENSOR_ORIENTATION_S]->distance;
-  const char* mn = entry->motion[SENSOR_ORIENTATION_N]->moving ? "m" : " ";
-  const char* me = entry->motion[SENSOR_ORIENTATION_E]->moving ? "m" : " ";
-  const char* ms = entry->motion[SENSOR_ORIENTATION_S]->moving ? "m" : " ";
-  const char* mw = entry->motion[SENSOR_ORIENTATION_W]->moving ? "m" : "-";
-  Serial.println(String("        ") + pn + mn + "      ");
-  Serial.println(String("  ") + pnw + "------" + pne + "  ");
-  Serial.println(String("") + pw + mw + "-----------" + pe + me + "");
-  Serial.println(String("        ") + ps + ms + "      ");
+  double ts = entry->proximity[SENSOR_ORIENTATION_S]->delta;
+  Serial.println(String("        ") + pn + "~" + tn + "      ");
+  Serial.println(String("  ") + pnw + "~" + tnw + "------" + pne + "~" + tne + "  ");
+  Serial.println(String("") + pw + "~" + tw + "-----------" + pe + "~" + te + "");
+  Serial.println(String("        ") + ps + "~" + ts + "      ");
   return 0;
 }
