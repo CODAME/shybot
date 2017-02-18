@@ -33,7 +33,8 @@ class Navigator {
 
     enum direction {
       DIR_FORWARD,
-      DIR_REVERSE
+      DIR_REVERSE,
+      DIR_STOP
     };
 
     enum nav_mode {
@@ -52,6 +53,8 @@ class Navigator {
 
     void go(StoreEntry *entry);
     void backup(double heading = 0);
+    void startBackup();
+    void stopBackup();
     void run(int heading);
     void search();
     void safelyFollowHeading(int heading, int speed = 5);
@@ -61,6 +64,7 @@ class Navigator {
     ProximitySensor::Proximity* getMinProximity();
     ProximitySensor::Proximity* getMaxProximity();
     bool getDanger();
+    bool getDanger(direction direction);
     double getAvgProximity();
     void setSteer(turn turn);
     turn getSteer();
@@ -72,7 +76,7 @@ class Navigator {
     Suggestion avgSuggestion = Suggestion({ 0, 0, 0});
 
   private:
-    bool headingIsDanger(int heading);
+    bool headingIsDanger(int heading, direction);
 
     Servo drive;
     Servo steer;
@@ -83,10 +87,10 @@ class Navigator {
     float proximity_weight[NUM_PROXIMITY] = { 1, 1, .4, 0, 3, 0, .4, 1 };
     uint32_t timer = 0;
     uint32_t turnStart = 0;
-    uint32_t backupStart = 0;
+    int backupGoal = 0;
     int backupHeading = 180;
     uint32_t lastDanger = 0;
-    int initMotionHeading = 0;
+    int initMotionHeading = 180;
     int mode = STOP;
 
 };

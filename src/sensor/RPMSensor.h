@@ -16,7 +16,7 @@ class RPMSensor {
   public:
     struct RPM {
       double rpm;
-      uint32_t rotations;
+      int rotations;
       double kph() {
         double mmPerMinute = wheelRPM() * WHEEL_CIRCUMFERENCE_MM;
         return mmPerMinute * MINUTES_PER_HOUR / MM_PER_KM;

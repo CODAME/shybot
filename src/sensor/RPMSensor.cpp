@@ -7,7 +7,7 @@
 //dRotations counts rotations since the greater of
 //1 second or the last call to getRPM
 
-volatile uint32_t rotations = 0;
+volatile int rotations = 0;
 volatile uint16_t dRotations = 0;
 int startTime = millis();
 

@@ -11,9 +11,11 @@
 #define POWER_INCREMENT 1
 #define DANGER_FREQ 500
 #define TURN_LENGTH 20
-#define BACKUP_LENGTH 20
+#define BACKUP_LENGTH 10
 #define RUN_TIME 30000
-#define START_POWER 50
+#define START_POWER 30
+
+#define DRIVE_TEST 1
 
 
 Navigator::Navigator(int drivePin, int steerPin) {
@@ -30,10 +32,13 @@ void Navigator::go(StoreEntry *entry) {
     timer = millis();
     mode++;
   }
+  #if DRIVE_TEST
+    mode = RUN;
+  #endif
   switch(mode) {
     case STOP:
       DEBUG("STOPPING");
-      setSpeed(0, DIR_FORWARD);
+      setSpeed(0, DIR_STOP);
       if(millis() - timer > 10000) {
         timer = millis();
         mode++;
@@ -55,7 +60,6 @@ void Navigator::go(StoreEntry *entry) {
       } else {
         safelyFollowHeading(0, 50);
       }
-      timer++;
       break;
     default:
       mode = STOP;
@@ -63,8 +67,21 @@ void Navigator::go(StoreEntry *entry) {
   //currentEntry->mode = mode;
 }
 
+void Navigator::startBackup() {
+  DEBUG("START BACKUP");
+  backupGoal = currentEntry->rpm.rotations + BACKUP_LENGTH;
+};
+
+void Navigator::stopBackup() {
+  backupGoal = currentEntry->rpm.rotations;
+}
+
 void Navigator::backup(double heading) {
-  DEBUG("BACKING UP");
+  if(getDanger(DIR_REVERSE)) {
+    DEBUG("REVERSE DANGER");
+    stopBackup();
+    return;
+  }
 
   if (heading > 180) {
     setSteer(LEFT);
@@ -80,13 +97,13 @@ void Navigator::search() {
 }
 
 void Navigator::safelyFollowHeading(int heading, int speed) {
-  if(getDanger()) {
-    DEBUG("DANGER");
-    backupStart = currentEntry->rpm.rotations;
-    setSpeed(0, DIR_FORWARD);
-  } else if(backupStart && currentEntry->rpm.rotations - backupStart < BACKUP_LENGTH) {
-    DEBUG(String("BACKUP: ") + (currentEntry->rpm.rotations - backupStart));
+  if(backupGoal - currentEntry->rpm.rotations > 0) {
+    DEBUG(String("backup: ") + (backupGoal - currentEntry->rpm.rotations));
     backup();
+  } else if(getDanger()) {
+    DEBUG("DANGER");
+    startBackup();
+    setSpeed(0, DIR_STOP);
   } else {
     DEBUG(String("HEADING: ") + heading);
     followHeading(heading);
@@ -95,9 +112,7 @@ void Navigator::safelyFollowHeading(int heading, int speed) {
 
 void Navigator::followHeading(int heading, int speed) {
   if(heading > 90 && heading < 225) {
-    backupStart = currentEntry->rpm.rotations;
-    backupHeading = ((int) heading + 180) % 360;
-    backup();
+    backup(heading);
   } else if ( heading < 10 || heading > 350) {
     setSteer(CENTER);
     setSpeed(speed, DIR_FORWARD);
@@ -121,7 +136,6 @@ int Navigator::getMotionHeading() {
       sumSin += sin(M_PI * sensor_heading[i] / 180);
     }
   }
-  //if(countMotion && millis() > 30000) {
   if(countMotion) {
     return (int) ((180 * atan2(sumSin/countMotion, sumCos/countMotion) / M_PI) + 360) % 360;
   } else {
@@ -154,21 +168,23 @@ ProximitySensor::Proximity* Navigator::getMinProximity() {
   return currentEntry->proximity[proxNum];
 }
 
-bool Navigator::headingIsDanger(int heading) {
+bool Navigator::headingIsDanger(int heading, direction direction) {
   if(currentDirection == DIR_FORWARD) {
+    DEBUG(String(heading) + "deg is danger");
     return heading < 90 || heading > 270;
   } else {
     return heading > 90 && heading < 270;
   }
 }
 
-bool Navigator::getDanger() {
+
+bool Navigator::getDanger(direction direction) {
   int proxNum = -1;
   double minProximity = 400;
   for (int i=0; i<NUM_PROXIMITY; i++) {
     double distance = currentEntry->proximity[i]->distance;
     double heading = sensor_heading[currentEntry->proximity[i]->orientation];
-    if(distance != 0 && distance < minProximity && headingIsDanger(heading)) {
+    if(distance != 0 && distance < minProximity && headingIsDanger(heading, direction)) {
       minProximity = distance;
       proxNum = i;
     }
@@ -181,12 +197,14 @@ bool Navigator::getDanger() {
   }
 }
 
+bool Navigator::getDanger() {
+  return getDanger(currentDirection);
+}
+
 
 void Navigator::setSpeed(double goalKPH, direction direction) {
   if (goalKPH == 0) {
-    currentPower = 0;
-    drive.write(90);
-    return;
+    return setPower(0, DIR_STOP);
   }
   if (direction != currentDirection) {
     DEBUG("SWITCHING");
@@ -203,8 +221,10 @@ void Navigator::setSpeed(double goalKPH, direction direction) {
 
 void Navigator::setPower(double power, direction direction) {
   DEBUG(String("POWER: ") + power);
-  if (direction == DIR_FORWARD) {
-    drive.write(map(power, 0, 100, 90, MAX_THROTTLE));
+  if (direction == DIR_STOP) {
+    drive.write(0);
+  } else if (direction == DIR_FORWARD) {
+    drive.write(map(power, 0, 100, 100, MAX_THROTTLE));
   } else {
     int mappedPower = map(power, 0, 100, 90, MIN_THROTTLE);
     drive.write(mappedPower);

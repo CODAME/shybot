@@ -97,7 +97,7 @@ void setup(void)
 {
   Serial.begin(9600);
   navigator = new Navigator(PIN_DRIVE, PIN_STEER);
-  navigator->calibrate();
+  //navigator->calibrate();
 
   #if FONA_ENABLED
   fonaSerial->begin(4800);
@@ -150,5 +150,5 @@ void loop(void)
       delay(100);
     }
   #endif
-  delay(200);
+  delay(20);
 }
