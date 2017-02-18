@@ -5,6 +5,8 @@
 #include <Adafruit_MCP23017.h>
 #include "constants.h"
 
+#define STARTUP_TIME 60000
+
 
 class MotionSensor {
   public:
@@ -17,6 +19,7 @@ class MotionSensor {
 
     void getMotion(Motion *motion);
 
+    int pin;
     sensor_orientation orientation;
 
   private:
@@ -24,7 +27,7 @@ class MotionSensor {
     int getPin();
 
     //maps to sensor_orientation
-    int mcp_pin[8] = { 0, -1, 2, -1, 4, -1, 6, -1 };
+    int mcp_pin[8] = { 4, -1, 6, -1, 0, -1, 2, -1 };
 
 };
 

@@ -12,6 +12,7 @@
 #include "helpers.h"
 
 #include "sensor/GPSSensor.h"
+#include "sensor/MotionSensor.h"
 #include "sensor/ProximitySensor.h"
 #include "sensor/RPMSensor.h"
 #include "store/SDStore.h"
@@ -22,7 +23,6 @@
 
 #define PIN_SD_CS 4
 #define PIN_ADC_CS A5
-#define PIN_SAFE_TO_MOVE A0
 #define PIN_MCP_INTERRUPT 5
 #define PIN_PROXIMITY_TRIGGER 6
 #define PIN_STEER 9
@@ -33,14 +33,15 @@
 #define FONA_ENABLED false
 #define I2C_ADDRESS_MOTION 0
 
-
 HardwareSerial *fonaSerial = &Serial1;
 
 Adafruit_FONA fona = Adafruit_FONA(PIN_FONA_RST);
 Adafruit_MQTT_FONA mqtt(&fona, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
 
+
 Adafruit_MCP23017 mcp;
 MCP3008 adc = MCP3008(PIN_ADC_CS);
+
 
 GPSSensor *gps;
 RPMSensor *rpm;
@@ -50,15 +51,31 @@ SDStore *sdStore;
 IOStore *ioStore;
 Navigator *navigator;
 ProximitySensor *proximitySensors[NUM_PROXIMITY] = {
-  new ProximitySensor(&adc, SENSOR_ORIENTATION_N),
+  nullptr,
   new ProximitySensor(&adc, SENSOR_ORIENTATION_NE),
-  new ProximitySensor(&adc, SENSOR_ORIENTATION_E),
+  nullptr,
   nullptr,
   new ProximitySensor(&adc, SENSOR_ORIENTATION_S),
   nullptr,
-  new ProximitySensor(&adc, SENSOR_ORIENTATION_W),
-  new ProximitySensor(&adc, SENSOR_ORIENTATION_NW)
+  nullptr,
+  new ProximitySensor(&adc, SENSOR_ORIENTATION_NW),
 };
+MotionSensor *motionSensors[NUM_MOTION] = {
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_N),
+  nullptr,
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_E),
+  nullptr,
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_S),
+  nullptr,
+  new MotionSensor(&mcp, SENSOR_ORIENTATION_W),
+  nullptr
+};
+
+volatile bool MOTION = false;
+
+void ISR_onMotion() {
+    MOTION = true;
+}
 
 void readSensors() {
   #if FONA_ENABLED
@@ -69,19 +86,12 @@ void readSensors() {
     if(proximitySensors[i] == nullptr) { continue; }
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
   }
-}
-volatile bool SAFE_TO_MOVE = false;
-bool hasCalibrated = false;
-
-void ISR_onSafe() {
-  SAFE_TO_MOVE = true;
+  for(int i=0; i<NUM_MOTION; i++) {
+    if(motionSensors[i] == nullptr) { continue; }
+    motionSensors[i]->getMotion(storeEntry->motion[i]);
+  }
 }
 
-volatile bool DANGER = false;
-
-void ISR_onMotion() {
-    DANGER = true;
-}
 
 void setup(void)
 {
@@ -101,16 +111,9 @@ void setup(void)
   #endif
 
   mcp.begin(I2C_ADDRESS_MOTION);
-  mcp.setupInterrupts(true, false, LOW);
-  pinMode(PIN_MCP_INTERRUPT, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), ISR_onMotion, FALLING);
-
-  pinMode(PIN_SAFE_TO_MOVE, INPUT_PULLUP);
-  attachInterrupt(PIN_SAFE_TO_MOVE, ISR_onSafe, FALLING);
 
   rpm = new RPMSensor(PIN_RPM);
 
-  digitalWrite(PIN_PROXIMITY_TRIGGER, LOW);
   SPI.begin();
   adc.begin();
 
@@ -128,20 +131,16 @@ void uploadQueued() {
     }
   #endif
 }
+Navigator::Suggestion suggestion;
 void loop(void)
 {
-  if(DANGER) {
-    Serial.println("DANGER");
-  }
   readSensors();
   sdStore->store(storeEntry);
   logStore->graph(storeEntry);
-  //if (SAFE_TO_MOVE) {
-    navigator->go(storeEntry);
-  //}
+  navigator->go(storeEntry);
 
   #if FONA_ENABLED
-    if (!DANGER && navigator->getPower() == Navigator::STOP) {
+    if (!MOTION && navigator->getPower() == 0) {
       ioStore->store(storeEntry);
       while(!DANGER && ioStore->queueLen() > 0) {
         uploadQueued();
@@ -151,5 +150,5 @@ void loop(void)
       delay(100);
     }
   #endif
-  delay(20);
+  delay(200);
 }

@@ -5,16 +5,16 @@
 #include <LinkedList.h>
 
 #include "store/StoreEntry.h"
+#include "sensor/ProximitySensor.h"
 
-#define NUM_SUGGESTIONS 20
-//#define MAX_THROTTLE 135
-#define MAX_THROTTLE 115
+#define MAX_THROTTLE 135
 #define MIN_THROTTLE 50
 
 enum {
   PROXIMITY_RANK = 1,
   RPM_RANK = 2
 };
+
 
 class Navigator {
   public:
@@ -34,16 +34,6 @@ class Navigator {
     enum direction {
       DIR_FORWARD,
       DIR_REVERSE
-    };
-
-    enum hazard_type {
-      OBJECT,
-      HUMAN
-    };
-
-    enum severity {
-      SEV_PROXIMITY = 1000,
-      SEV_MOTION = 100000
     };
 
     enum nav_mode {
@@ -82,6 +72,8 @@ class Navigator {
     Suggestion avgSuggestion = Suggestion({ 0, 0, 0});
 
   private:
+    bool headingIsDanger(int heading);
+
     Servo drive;
     Servo steer;
     StoreEntry *currentEntry;
@@ -90,7 +82,9 @@ class Navigator {
     turn currentTurn;
     float proximity_weight[NUM_PROXIMITY] = { 1, 1, .4, 0, 3, 0, .4, 1 };
     uint32_t timer = 0;
+    uint32_t turnStart = 0;
     uint32_t backupStart = 0;
+    int backupHeading = 180;
     uint32_t lastDanger = 0;
     int initMotionHeading = 0;
     int mode = STOP;
