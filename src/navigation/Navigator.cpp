@@ -19,7 +19,7 @@
 #define STOP_MS 10000
 #define START_POWER 20
 
-#define DRIVE_TEST 1
+#define DRIVE_TEST 0
 #define FONA_TEST 0
 
 
@@ -75,6 +75,7 @@ void Navigator::go(StoreEntry *entry) {
     default:
       mode = STOP;
       stopTime = millis();
+      runStartTime = millis();
   };
   currentEntry->mode = mode;
 }
@@ -82,7 +83,7 @@ void Navigator::go(StoreEntry *entry) {
 void Navigator::startBackup() {
   DEBUG("START BACKUP");
   backupGoal = currentEntry->rpm.rotations + BACKUP_LENGTH;
-  if(millis() % 60000 < 5000) {
+  if(millis() % 30000 < 5000) {
     countBackups = 0;
   }
   countBackups++;
@@ -94,22 +95,19 @@ void Navigator::stopBackup() {
 
 void Navigator::backup(double heading) {
   DEBUG(String("COUNT BACKUPS: ") + countBackups);
+  double newHeading = heading;
   if(countBackups > BACKUP_TRIES) {
-    DEBUG("RANDOM BACKUP");
-    setSteer(millis() % 3 == 0 ? LEFT : RIGHT);
-    setSpeed(7, millis() % 2 == 0 ? DIR_FORWARD : DIR_REVERSE);
-    delay(1000);
+    newHeading = random(360);
   } else if(getDanger(DIR_REVERSE)) {
     DEBUG("REVERSE DANGER");
     stopBackup();
-  } else {
-    if (heading > 180) {
-      setSteer(LEFT);
-    } else {
-      setSteer(RIGHT);
-    }
-    setSpeed(7, DIR_REVERSE);
   }
+  if (newHeading > 180) {
+    setSteer(LEFT);
+  } else {
+    setSteer(RIGHT);
+  }
+  setSpeed(7, DIR_REVERSE);
 }
 
 void Navigator::search() {
