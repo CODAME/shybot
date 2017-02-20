@@ -9,67 +9,83 @@
 #define STEER_MIN 0
 #define SPEED_TOLERANCE_KPH .5
 #define POWER_INCREMENT 1
+#define POWER_INCREMENT_FREQ 500
 #define DANGER_FREQ 500
 #define TURN_LENGTH 20
 #define BACKUP_LENGTH 10
-#define RUN_TIME 30000
-#define START_POWER 30
+#define BACKUP_TRIES 5
+#define RUN_LENGTH 500
+#define RUN_MAX_TIME 120000
+#define STOP_MS 10000
+#define START_POWER 20
 
 #define DRIVE_TEST 1
+#define FONA_TEST 0
 
 
-Navigator::Navigator(int drivePin, int steerPin) {
+Navigator::Navigator(int drivePin, int steerPin, int motorSwitchPin) {
   drive.attach(drivePin);
   steer.attach(steerPin);
+  motorSwitch = motorSwitchPin;
+  pinMode(motorSwitch, OUTPUT);
 }
 
 void Navigator::go(StoreEntry *entry) {
-  DEBUG(millis() - timer);
   currentEntry = entry;
   int heading = getMotionHeading();
 
-  if (millis() - timer > RUN_TIME) {
-    timer = millis();
-    mode++;
-  }
   #if DRIVE_TEST
     mode = RUN;
   #endif
+  #if FONA_TEST
+    mode = STOP;
+  #endif
+
   switch(mode) {
     case STOP:
       DEBUG("STOPPING");
       setSpeed(0, DIR_STOP);
-      if(millis() - timer > 10000) {
-        timer = millis();
+      if(millis() - stopTime > STOP_MS) {
+        stopTime = millis();
         mode++;
       }
       break;
     case SCAN:
       DEBUG("SCANNING");
       if(heading != -1) {
-        mode = RUN;
+        mode++;
         initMotionHeading = heading;
-      } else {
-        timer = millis();
+        runStart = entry->rpm.rotations;
+        runStartTime = millis();
       }
       break;
     case RUN:
       DEBUG("RUNNING");
-      if(currentEntry->rpm.rotations - turnStart < TURN_LENGTH) {
-        safelyFollowHeading((180 + initMotionHeading) % 360, 50);
+      DEBUG(currentEntry->rpm.rotations - runStart);
+      if(currentEntry->rpm.rotations - runStart > RUN_LENGTH ||
+        millis() - runStartTime > RUN_MAX_TIME
+      ) {
+        mode++;
+      } else if(currentEntry->rpm.rotations - turnStart < TURN_LENGTH) {
+        safelyFollowHeading((180 + initMotionHeading) % 360, 60);
       } else {
-        safelyFollowHeading(0, 50);
+        safelyFollowHeading(0, 60);
       }
       break;
     default:
       mode = STOP;
+      stopTime = millis();
   };
-  //currentEntry->mode = mode;
+  currentEntry->mode = mode;
 }
 
 void Navigator::startBackup() {
   DEBUG("START BACKUP");
   backupGoal = currentEntry->rpm.rotations + BACKUP_LENGTH;
+  if(millis() % 60000 < 5000) {
+    countBackups = 0;
+  }
+  countBackups++;
 };
 
 void Navigator::stopBackup() {
@@ -77,18 +93,23 @@ void Navigator::stopBackup() {
 }
 
 void Navigator::backup(double heading) {
-  if(getDanger(DIR_REVERSE)) {
+  DEBUG(String("COUNT BACKUPS: ") + countBackups);
+  if(countBackups > BACKUP_TRIES) {
+    DEBUG("RANDOM BACKUP");
+    setSteer(millis() % 3 == 0 ? LEFT : RIGHT);
+    setSpeed(7, millis() % 2 == 0 ? DIR_FORWARD : DIR_REVERSE);
+    delay(1000);
+  } else if(getDanger(DIR_REVERSE)) {
     DEBUG("REVERSE DANGER");
     stopBackup();
-    return;
-  }
-
-  if (heading > 180) {
-    setSteer(LEFT);
   } else {
-    setSteer(RIGHT);
+    if (heading > 180) {
+      setSteer(LEFT);
+    } else {
+      setSteer(RIGHT);
+    }
+    setSpeed(7, DIR_REVERSE);
   }
-  setSpeed(7, DIR_REVERSE);
 }
 
 void Navigator::search() {
@@ -207,22 +228,24 @@ void Navigator::setSpeed(double goalKPH, direction direction) {
     return setPower(0, DIR_STOP);
   }
   if (direction != currentDirection) {
-    DEBUG("SWITCHING");
     currentPower = START_POWER;
     drive.write(90);
     delay(1000);
   }
-  double diff = goalKPH - currentEntry->rpm.kph();
-  double inc = constrain((diff / goalKPH) * POWER_INCREMENT, -POWER_INCREMENT, POWER_INCREMENT);
-  if (abs(diff) > SPEED_TOLERANCE_KPH) {
-    setPower(constrain(currentPower + inc, 0, 100), direction);
+  if (millis() - lastIncrement > POWER_INCREMENT_FREQ ) {
+    lastIncrement = millis();
+    double diff = goalKPH - currentEntry->rpm.kph();
+    double inc = constrain((diff / goalKPH) * POWER_INCREMENT, -POWER_INCREMENT, POWER_INCREMENT);
+    if (abs(diff) > SPEED_TOLERANCE_KPH) {
+      setPower(constrain(currentPower + inc, 0, 100), direction);
+    }
   }
 }
 
 void Navigator::setPower(double power, direction direction) {
   DEBUG(String("POWER: ") + power);
   if (direction == DIR_STOP) {
-    drive.write(0);
+    drive.write(90);
   } else if (direction == DIR_FORWARD) {
     drive.write(map(power, 0, 100, 100, MAX_THROTTLE));
   } else {
@@ -240,14 +263,6 @@ double Navigator::getPower() {
 void Navigator::setSteer(turn turn) {
   currentTurn = turn;
   steer.write(turn);
-}
-
-void Navigator::calibrate() {
-    drive.write(MAX_THROTTLE);
-    delay(2000);
-    drive.write(MIN_THROTTLE);
-    delay(2000);
-    drive.write(90);
 }
 
 Navigator::turn Navigator::getSteer() {

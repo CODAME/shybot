@@ -27,7 +27,7 @@ class MotionSensor {
     int getPin();
 
     //maps to sensor_orientation
-    int mcp_pin[8] = { 4, -1, 6, -1, 0, -1, 2, -1 };
+    int mcp_pin[8] = { 6, -1, 4, -1, 2, -1, 0, -1 };
 
 };
 

@@ -49,7 +49,7 @@ class Navigator {
       int speed;
     };
 
-    Navigator(int drivePin, int steerPin);
+    Navigator(int drivePin, int steerPin, int motorSwitch);
 
     void go(StoreEntry *entry);
     void backup(double heading = 0);
@@ -71,7 +71,6 @@ class Navigator {
     void setSpeed(double goalKPH, direction direction);
     void setPower(double power, direction direction);
     double getPower();
-    void calibrate();
 
     Suggestion avgSuggestion = Suggestion({ 0, 0, 0});
 
@@ -80,16 +79,20 @@ class Navigator {
 
     Servo drive;
     Servo steer;
+    int motorSwitch;
     StoreEntry *currentEntry;
     double currentPower = 0;
-    direction currentDirection = DIR_FORWARD;
+    direction currentDirection = DIR_STOP;
     turn currentTurn;
     float proximity_weight[NUM_PROXIMITY] = { 1, 1, .4, 0, 3, 0, .4, 1 };
-    uint32_t timer = 0;
     uint32_t turnStart = 0;
+    int lastIncrement = 0;
     int backupGoal = 0;
-    int backupHeading = 180;
+    int countBackups = 0;
     uint32_t lastDanger = 0;
+    int stopTime = 0;
+    int runStart = 0;
+    int runStartTime = 0;
     int initMotionHeading = 180;
     int mode = STOP;
 

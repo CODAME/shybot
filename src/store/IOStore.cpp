@@ -11,9 +11,9 @@
 
 #define LOCATION_FEED AIO_USERNAME "/feeds/location/csv"
 #define HEADING_FEED AIO_USERNAME "/feeds/heading"
-#define SPEED_FEED AIO_USERNAME "/feeds/speed"
-#define PROXIMITY_NE_FEED AIO_USERNAME "/feeds/proximity-ne"
-#define PROXIMITY_NW_FEED AIO_USERNAME "/feeds/proximity-nw"
+#define BATTERY_VOLTS_FEED AIO_USERNAME "/feeds/battery-volts"
+#define SENSOR_FEED AIO_USERNAME "/feeds/sensors"
+#define MODE_FEED AIO_USERNAME "/feeds/mode"
 
 #define halt(s) { DEBUG(F( s )); delay(1000); NVIC_SystemReset(); }
 
@@ -27,9 +27,9 @@ IOStore::IOStore(Adafruit_FONA *myFona, Adafruit_MQTT_FONA *myMqtt) {
   mqtt = myMqtt;
   locationFeed = new Adafruit_MQTT_Publish(mqtt, LOCATION_FEED, QOS_LEVEL);
   headingFeed = new Adafruit_MQTT_Publish(mqtt, HEADING_FEED, QOS_LEVEL);
-  speedFeed = new Adafruit_MQTT_Publish(mqtt, SPEED_FEED, QOS_LEVEL);
-  proximityNEFeed = new Adafruit_MQTT_Publish(mqtt, PROXIMITY_NE_FEED, QOS_LEVEL);
-  proximityNWFeed = new Adafruit_MQTT_Publish(mqtt, PROXIMITY_NW_FEED, QOS_LEVEL);
+  batteryVoltsFeed = new Adafruit_MQTT_Publish(mqtt, BATTERY_VOLTS_FEED, QOS_LEVEL);
+  sensorFeed = new Adafruit_MQTT_Publish(mqtt, SENSOR_FEED, QOS_LEVEL);
+  modeFeed = new Adafruit_MQTT_Publish(mqtt, MODE_FEED, QOS_LEVEL);
 };
 
 iostore_status IOStore::connectNetwork() {
@@ -108,9 +108,9 @@ iostore_status IOStore::store(StoreEntry *entry) {
   }
   if  (locationFeed->publish(entry->getCSVLocation())
     && headingFeed->publish(entry->position.heading)
-    && speedFeed->publish(entry->position.kph)
-    && proximityNWFeed->publish(entry->proximity[0]->distance)
-    && proximityNEFeed->publish(entry->proximity[1]->distance)
+    && batteryVoltsFeed->publish(entry->battery.volts)
+    && sensorFeed->publish(entry->getSensorData())
+    && modeFeed->publish(entry->getModeName())
       ) {
     return IOSTORE_SUCCESS;
   } else {

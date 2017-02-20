@@ -32,7 +32,7 @@ class IOStore {
     Adafruit_MQTT *mqtt;
     Adafruit_MQTT_Publish *locationFeed;
     Adafruit_MQTT_Publish *headingFeed;
-    Adafruit_MQTT_Publish *speedFeed;
-    Adafruit_MQTT_Publish *proximityNEFeed;
-    Adafruit_MQTT_Publish *proximityNWFeed;
+    Adafruit_MQTT_Publish *batteryVoltsFeed;
+    Adafruit_MQTT_Publish *sensorFeed;
+    Adafruit_MQTT_Publish *modeFeed;
 };

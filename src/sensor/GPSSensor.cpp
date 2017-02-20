@@ -17,9 +17,11 @@ GPSSensor::Position GPSSensor::getPosition() {
   float altitude = 0.0;
   bool networkReady = fona->getNetworkStatus() == 1;
   gpsSuccess = fona->getGPS(&latitude, &longitude, &speedKPH, &heading, &altitude);
+  /*
   if(!gpsSuccess && networkReady) {
     gsmSuccess = fona->getGSMLoc(&latitude, &longitude);
   }
+  */
   if((gpsSuccess || networkReady) && !didSetTime) {
     if(sbSetTimeOffset(getTime()) == 0) {
       didSetTime = true;

@@ -2,10 +2,11 @@
 #include "helpers.h"
 #include "StoreEntry.h"
 #include "sensor/GPSSensor.h"
+#include "navigation/Navigator.h"
 
 #include <stdio.h>
 
-#define CSV_HEADER "timestamp,heading,latitude,longitude,altitude,kph,rpm,proximity_N,proximity_NE,proximity_E,proximity_S,proximity_W,proximity_NW,motion_N,motion_E,motion_S,motion_W"
+#define CSV_HEADER "timestamp,heading,latitude,longitude,altitude,kph,rpm,proximity_NE,proximity_S,proximity_NW,motion_N,motion_E,motion_S,motion_W,battery_volts"
 
 
 char csvbuffer[512];
@@ -52,7 +53,7 @@ const char* StoreEntry::getCSV() {
   snprintf(
     csvbuffer,
     512,
-    "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%.2f,%lu,%lu,%lu,%lu,%lu,%lu,%d,%d,%d,%d",
+    "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%.2f,%lu,%lu,%lu,%d,%d,%d,%d,%.2f",
     sbGetTime(),
     position.heading,
     position.lat,
@@ -60,16 +61,46 @@ const char* StoreEntry::getCSV() {
     position.altitude,
     position.kph,
     rpm.rpm,
-    proximity[SENSOR_ORIENTATION_N]->distance,
     proximity[SENSOR_ORIENTATION_NE]->distance,
-    proximity[SENSOR_ORIENTATION_E]->distance,
     proximity[SENSOR_ORIENTATION_S]->distance,
-    proximity[SENSOR_ORIENTATION_W]->distance,
     proximity[SENSOR_ORIENTATION_NW]->distance,
     motion[SENSOR_ORIENTATION_N]->moving,
     motion[SENSOR_ORIENTATION_E]->moving,
     motion[SENSOR_ORIENTATION_S]->moving,
-    motion[SENSOR_ORIENTATION_W]->moving
+    motion[SENSOR_ORIENTATION_W]->moving,
+    battery.volts
   );
   return csvbuffer;
+}
+
+const char* StoreEntry::getSensorData() {
+  String foo = String("foo");
+  snprintf(
+    csvbuffer,
+    512,
+    "%lu,%lu,%lu,%d,%d,%d,%d,%.2f",
+    proximity[SENSOR_ORIENTATION_NE]->distance,
+    proximity[SENSOR_ORIENTATION_S]->distance,
+    proximity[SENSOR_ORIENTATION_NW]->distance,
+    motion[SENSOR_ORIENTATION_N]->moving,
+    motion[SENSOR_ORIENTATION_E]->moving,
+    motion[SENSOR_ORIENTATION_S]->moving,
+    motion[SENSOR_ORIENTATION_W]->moving,
+    rpm.kph()
+  );
+  return csvbuffer;
+}
+
+const char* StoreEntry::getModeName() {
+  String foo = String("foo");
+  switch(mode) {
+    case Navigator::STOP:
+      return "STOPPED";
+    case Navigator::SCAN:
+      return "SCANNING";
+    case Navigator::RUN:
+      return "RUNNING";
+    default:
+      return "INVALID";
+  }
 }

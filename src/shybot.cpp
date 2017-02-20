@@ -11,6 +11,7 @@
 #include "constants.h"
 #include "helpers.h"
 
+#include "sensor/BatterySensor.h"
 #include "sensor/GPSSensor.h"
 #include "sensor/MotionSensor.h"
 #include "sensor/ProximitySensor.h"
@@ -22,15 +23,17 @@
 
 
 #define PIN_SD_CS 4
-#define PIN_ADC_CS A5
 #define PIN_MCP_INTERRUPT 5
 #define PIN_PROXIMITY_TRIGGER 6
 #define PIN_STEER 9
 #define PIN_DRIVE 10
 #define PIN_RPM 11
 #define PIN_FONA_RST 13
+#define PIN_BATTERY A0
+#define PIN_MOTOR_SWITCH A1
+#define PIN_ADC_CS A5
 
-#define FONA_ENABLED false
+#define FONA_ENABLED 0
 #define I2C_ADDRESS_MOTION 0
 
 HardwareSerial *fonaSerial = &Serial1;
@@ -50,6 +53,7 @@ LogStore *logStore;
 SDStore *sdStore;
 IOStore *ioStore;
 Navigator *navigator;
+BatterySensor *battery;
 ProximitySensor *proximitySensors[NUM_PROXIMITY] = {
   nullptr,
   new ProximitySensor(&adc, SENSOR_ORIENTATION_NE),
@@ -71,17 +75,12 @@ MotionSensor *motionSensors[NUM_MOTION] = {
   nullptr
 };
 
-volatile bool MOTION = false;
-
-void ISR_onMotion() {
-    MOTION = true;
-}
-
 void readSensors() {
-  #if FONA_ENABLED
-    storeEntry->position = gps->getPosition();
-  #endif
   rpm->getRPM(&storeEntry->rpm);
+  if(FONA_ENABLED && storeEntry->rpm.rpm == 0) {
+    storeEntry->position = gps->getPosition();
+  }
+  battery->getBattery(&storeEntry->battery);
   for(int i=0; i<NUM_PROXIMITY; i++) {
     if(proximitySensors[i] == nullptr) { continue; }
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
@@ -96,8 +95,8 @@ void readSensors() {
 void setup(void)
 {
   Serial.begin(9600);
-  navigator = new Navigator(PIN_DRIVE, PIN_STEER);
-  //navigator->calibrate();
+  navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH);
+  battery = new BatterySensor(PIN_BATTERY);
 
   #if FONA_ENABLED
   fonaSerial->begin(4800);
@@ -129,6 +128,7 @@ void uploadQueued() {
     if (ioEntry != storeEntry) {
       delete ioEntry;
     }
+    DEBUG("Uploaded to IO");
   #endif
 }
 Navigator::Suggestion suggestion;
@@ -137,12 +137,14 @@ void loop(void)
   readSensors();
   sdStore->store(storeEntry);
   logStore->graph(storeEntry);
+
   navigator->go(storeEntry);
 
+
   #if FONA_ENABLED
-    if (!MOTION && navigator->getPower() == 0) {
+    if (storeEntry->mode == Navigator::STOP) {
       ioStore->store(storeEntry);
-      while(!DANGER && ioStore->queueLen() > 0) {
+      if(ioStore->queueLen() > 0) {
         uploadQueued();
       }
     } else {
