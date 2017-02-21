@@ -12,13 +12,14 @@ class MotionSensor {
   public:
     struct Motion {
       sensor_orientation orientation;
-      bool moving;
+      volatile bool moving;
     };
 
     MotionSensor(Adafruit_MCP23017 *myMcp, sensor_orientation myOrientation);
 
     void attachInterrupts();
     void getMotion(Motion *motion);
+    static int getOrientationByPin(int pin);
 
     int pin;
     sensor_orientation orientation;
@@ -28,7 +29,6 @@ class MotionSensor {
     int getPin();
 
     //maps to sensor_orientation
-    int mcp_pin[8] = { 6, -1, 4, -1, 2, -1, 0, -1 };
 
 };
 

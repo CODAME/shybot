@@ -79,8 +79,10 @@ MotionSensor *motionSensors[NUM_MOTION] = {
 
 volatile bool MOTION = false;
 void ISR_onMCPInterrupt() {
-  digitalRead(mcp.getLastInterruptPin());
+  int motionPin = mcp.getLastInterruptPin();
+  digitalRead(motionPin);
   MOTION = true;
+  storeEntry->motion[MotionSensor::getOrientationByPin(motionPin)]->moving = true;
 }
 
 void readSensors() {
@@ -157,10 +159,8 @@ void loop(void)
   sdStore->store(storeEntry);
   logStore->graph(storeEntry);
 
-  navigator->go(storeEntry);
-
   #if FONA_ENABLED
-    if (storeEntry->mode == Navigator::STOP) {
+    if (storeEntry->mode == Navigator::SCAN) {
       int status = ioStore->store(storeEntry, &MOTION);
       if(status == IOSTORE_INTERRUPTED) {
         DEBUG("INTERRUPTED");
@@ -173,5 +173,16 @@ void loop(void)
       delay(100);
     }
   #endif
+  if(MOTION) {
+    DEBUG("MOTION");
+    DEBUG("MOTION");
+    DEBUG("MOTION");
+    DEBUG("MOTION");
+    DEBUG("MOTION");
+    DEBUG("MOTION");
+    DEBUG("MOTION");
+  }
+  navigator->go(storeEntry);
+  MOTION = false;
   delay(20);
 }

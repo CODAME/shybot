@@ -41,7 +41,7 @@ void Navigator::go(StoreEntry *entry) {
     mode = RUN;
   #endif
   #if FONA_TEST
-    mode = STOP;
+    mode = SCAN;
   #endif
 
   switch(mode) {

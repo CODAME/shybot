@@ -5,6 +5,7 @@
 
 #include "constants.h"
 
+int mcp_pin[8] = { 6, -1, 4, -1, 2, -1, 0, -1 };
 
 MotionSensor::MotionSensor(Adafruit_MCP23017 *myMcp, sensor_orientation myOrientation) {
   mcp = myMcp;
@@ -27,4 +28,13 @@ void MotionSensor::getMotion(Motion *motion) {
 
 int MotionSensor::getPin() {
   return mcp_pin[orientation];
+}
+
+int MotionSensor::getOrientationByPin(int pin) {
+  for(int i=0; i<8; i++) {
+    if(mcp_pin[i] == pin) {
+      return i;
+    }
+  }
+
 }
