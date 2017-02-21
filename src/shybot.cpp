@@ -108,6 +108,20 @@ void setup(void)
   navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH);
   battery = new BatterySensor(PIN_BATTERY);
 
+  mcp.begin(I2C_ADDRESS_MOTION);
+
+  rpm = new RPMSensor(PIN_RPM);
+  //calibrate if button pressed
+  mcp.pullUp(MCP_PIN_CALIBRATE, HIGH);
+  if(!mcp.digitalRead(MCP_PIN_CALIBRATE)) {
+    navigator->calibrate();
+  }
+
+  pinMode(PIN_MCP_INTERRUPT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), ISR_onMCPInterrupt, FALLING);
+  for(int i=0; i<NUM_MOTION; i++) {
+    motionSensors[i]->attachInterrupts();
+  }
   #if FONA_ENABLED
   fonaSerial->begin(4800);
   if(!fona.begin(*fonaSerial)) {
@@ -119,19 +133,6 @@ void setup(void)
   gps = new GPSSensor(&fona);
   #endif
 
-  mcp.begin(I2C_ADDRESS_MOTION);
-
-  rpm = new RPMSensor(PIN_RPM);
-  //calibrate if button pressed
-  mcp.pullUp(MCP_PIN_CALIBRATE, HIGH);
-  if(!mcp.digitalRead(MCP_PIN_CALIBRATE)) {
-    navigator->calibrate();
-  }
-  pinMode(PIN_MCP_INTERRUPT, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), ISR_onMCPInterrupt, FALLING);
-  for(int i=0; i<NUM_MOTION; i++) {
-    motionSensors[i]->attachInterrupts();
-  }
 
   SPI.begin();
   adc.begin();
