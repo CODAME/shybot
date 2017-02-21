@@ -101,27 +101,33 @@ iostore_status IOStore::connectMQTT() {
   return IOSTORE_SUCCESS;
 }
 
-iostore_status IOStore::store(StoreEntry *entry) {
+iostore_status IOStore::store(StoreEntry *entry, volatile bool *danger) {
   iostore_status fonaStatus = ensureConnected();
   if(fonaStatus != IOSTORE_SUCCESS) {
     return fonaStatus;
   }
   if  (locationFeed->publish(entry->getCSVLocation())
+    && !*danger
     && headingFeed->publish(entry->position.heading)
+    && !*danger
     && batteryVoltsFeed->publish(entry->battery.volts)
+    && !*danger
     && sensorFeed->publish(entry->getSensorData())
+    && !*danger
     && modeFeed->publish(entry->getModeName())
       ) {
     return IOSTORE_SUCCESS;
+  } else if(danger) {
+    return IOSTORE_INTERRUPTED;
   } else {
     return IOSTORE_NET_FAILURE;
   }
 }
 
-iostore_status IOStore::shiftQueue(StoreEntry *entry) {
+iostore_status IOStore::shiftQueue(StoreEntry *entry, volatile bool *danger) {
   //calling function has responsibility to delete *entry after user.
   entry = queue.shift();
-  iostore_status ioStatus = store(entry);
+  iostore_status ioStatus = store(entry, danger);
   if(ioStatus != IOSTORE_SUCCESS ) {
     DEBUG(F("Failed to upload store."));
   }

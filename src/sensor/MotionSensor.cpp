@@ -5,10 +5,15 @@
 
 #include "constants.h"
 
+
 MotionSensor::MotionSensor(Adafruit_MCP23017 *myMcp, sensor_orientation myOrientation) {
   mcp = myMcp;
   orientation = myOrientation;
   pin = getPin();
+}
+
+void MotionSensor::attachInterrupts() {
+  mcp->setupInterruptPin(pin, RISING);
 }
 
 void MotionSensor::getMotion(Motion *motion) {

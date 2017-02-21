@@ -22,7 +22,7 @@
 #define MIN_THROTTLE 50
 
 
-#define DRIVE_TEST 1
+#define DRIVE_TEST 0
 #define FONA_TEST 0
 
 

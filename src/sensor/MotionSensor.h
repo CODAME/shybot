@@ -17,6 +17,7 @@ class MotionSensor {
 
     MotionSensor(Adafruit_MCP23017 *myMcp, sensor_orientation myOrientation);
 
+    void attachInterrupts();
     void getMotion(Motion *motion);
 
     int pin;

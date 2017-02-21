@@ -10,17 +10,18 @@ enum iostore_status {
   IOSTORE_DELAYED,
   IOSTORE_NET_NOT_READY,
   IOSTORE_NET_FAILURE,
-  IOSTORE_FATAL_ERROR
+  IOSTORE_FATAL_ERROR,
+  IOSTORE_INTERRUPTED
 };
 
 class IOStore {
   public:
     IOStore(Adafruit_FONA *myfona, Adafruit_MQTT_FONA *myMqtt);
 
-    iostore_status store(StoreEntry *store);
+    iostore_status store(StoreEntry *store, volatile bool *danger);
     iostore_status ensureConnected();
     iostore_status pushQueue(StoreEntry *entry);
-    iostore_status shiftQueue(StoreEntry *entry);
+    iostore_status shiftQueue(StoreEntry *entry, volatile bool *danger);
     int queueLen();
 
   private:

@@ -35,7 +35,7 @@
 
 #define MCP_PIN_CALIBRATE 8
 
-#define FONA_ENABLED 0
+#define FONA_ENABLED 1
 #define I2C_ADDRESS_MOTION 0
 
 HardwareSerial *fonaSerial = &Serial1;
@@ -76,6 +76,12 @@ MotionSensor *motionSensors[NUM_MOTION] = {
   new MotionSensor(&mcp, SENSOR_ORIENTATION_W),
   nullptr
 };
+
+volatile bool MOTION = false;
+void ISR_onMCPInterrupt() {
+  digitalRead(mcp.getLastInterruptPin());
+  MOTION = true;
+}
 
 void readSensors() {
   rpm->getRPM(&storeEntry->rpm);
@@ -119,6 +125,11 @@ void setup(void)
   if(!mcp.digitalRead(MCP_PIN_CALIBRATE)) {
     navigator->calibrate();
   }
+  pinMode(PIN_MCP_INTERRUPT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), ISR_onMCPInterrupt, FALLING);
+  for(int i=0; i<NUM_MOTION; i++) {
+    motionSensors[i]->attachInterrupts();
+  }
 
   SPI.begin();
   adc.begin();
@@ -132,7 +143,7 @@ void setup(void)
 void uploadQueued() {
   #if FONA_ENABLED
     StoreEntry *ioEntry;
-    ioStore->shiftQueue(ioEntry);
+    ioStore->shiftQueue(ioEntry, &MOTION);
     if (ioEntry != storeEntry) {
       delete ioEntry;
     }
@@ -148,11 +159,13 @@ void loop(void)
 
   navigator->go(storeEntry);
 
-
   #if FONA_ENABLED
     if (storeEntry->mode == Navigator::STOP) {
-      ioStore->store(storeEntry);
-      if(ioStore->queueLen() > 0) {
+      int status = ioStore->store(storeEntry, &MOTION);
+      if(status == IOSTORE_INTERRUPTED) {
+        DEBUG("INTERRUPTED");
+      }
+      while(ioStore->queueLen() > 0 && !MOTION) {
         uploadQueued();
       }
     } else {
