@@ -16,8 +16,8 @@
 #define BACKUP_TRIES 5
 #define RUN_LENGTH 500
 #define RUN_MAX_TIME 120000
-#define STOP_MS 10000
-#define START_POWER 20
+#define STOP_MS 30000
+#define START_POWER 40
 
 #define DRIVE_TEST 0
 #define FONA_TEST 0
