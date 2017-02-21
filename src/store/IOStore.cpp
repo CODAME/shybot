@@ -106,16 +106,7 @@ iostore_status IOStore::store(StoreEntry *entry, volatile bool *danger) {
   if(fonaStatus != IOSTORE_SUCCESS) {
     return fonaStatus;
   }
-  if  (locationFeed->publish(entry->getCSVLocation())
-    && !*danger
-    && headingFeed->publish(entry->position.heading)
-    && !*danger
-    && batteryVoltsFeed->publish(entry->battery.volts)
-    && !*danger
-    && sensorFeed->publish(entry->getSensorData())
-    && !*danger
-    && modeFeed->publish(entry->getModeName())
-      ) {
+  if (sensorFeed->publish(entry->getCSV())) {
     return IOSTORE_SUCCESS;
   } else if(danger) {
     return IOSTORE_INTERRUPTED;

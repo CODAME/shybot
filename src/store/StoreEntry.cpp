@@ -53,7 +53,7 @@ const char* StoreEntry::getCSV() {
   snprintf(
     csvbuffer,
     512,
-    "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%.2f,%lu,%lu,%lu,%d,%d,%d,%d,%.2f",
+    "%lu,%.2f,%.8f,%.8f,%.2f,%.2f,%.2f,%.2f,%lu,%lu,%lu,%d,%d,%d,%d,%.2f,%s",
     sbGetTime(),
     position.heading,
     position.lat,
@@ -61,6 +61,7 @@ const char* StoreEntry::getCSV() {
     position.altitude,
     position.kph,
     rpm.rpm,
+    rpm.kph(),
     proximity[SENSOR_ORIENTATION_NE]->distance,
     proximity[SENSOR_ORIENTATION_S]->distance,
     proximity[SENSOR_ORIENTATION_NW]->distance,
@@ -68,25 +69,8 @@ const char* StoreEntry::getCSV() {
     motion[SENSOR_ORIENTATION_E]->moving,
     motion[SENSOR_ORIENTATION_S]->moving,
     motion[SENSOR_ORIENTATION_W]->moving,
-    battery.volts
-  );
-  return csvbuffer;
-}
-
-const char* StoreEntry::getSensorData() {
-  String foo = String("foo");
-  snprintf(
-    csvbuffer,
-    512,
-    "%lu,%lu,%lu,%d,%d,%d,%d,%.2f",
-    proximity[SENSOR_ORIENTATION_NE]->distance,
-    proximity[SENSOR_ORIENTATION_S]->distance,
-    proximity[SENSOR_ORIENTATION_NW]->distance,
-    motion[SENSOR_ORIENTATION_N]->moving,
-    motion[SENSOR_ORIENTATION_E]->moving,
-    motion[SENSOR_ORIENTATION_S]->moving,
-    motion[SENSOR_ORIENTATION_W]->moving,
-    rpm.kph()
+    battery.volts,
+    getModeName()
   );
   return csvbuffer;
 }
