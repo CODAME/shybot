@@ -17,9 +17,12 @@
 #define RUN_LENGTH 500
 #define RUN_MAX_TIME 120000
 #define STOP_MS 30000
-#define START_POWER 40
+#define START_POWER 50
+#define MAX_THROTTLE 140
+#define MIN_THROTTLE 50
 
-#define DRIVE_TEST 0
+
+#define DRIVE_TEST 1
 #define FONA_TEST 0
 
 
@@ -67,9 +70,9 @@ void Navigator::go(StoreEntry *entry) {
       ) {
         mode++;
       } else if(currentEntry->rpm.rotations - turnStart < TURN_LENGTH) {
-        safelyFollowHeading((180 + initMotionHeading) % 360, 60);
+        safelyFollowHeading((180 + initMotionHeading) % 360, 20);
       } else {
-        safelyFollowHeading(0, 60);
+        safelyFollowHeading(0, 20);
       }
       break;
     default:
@@ -125,7 +128,7 @@ void Navigator::safelyFollowHeading(int heading, int speed) {
     setSpeed(0, DIR_STOP);
   } else {
     DEBUG(String("HEADING: ") + heading);
-    followHeading(heading);
+    followHeading(heading, speed);
   }
 }
 
@@ -222,6 +225,7 @@ bool Navigator::getDanger() {
 
 
 void Navigator::setSpeed(double goalKPH, direction direction) {
+  DEBUG(String("POWER: ") + currentPower);
   if (goalKPH == 0) {
     return setPower(0, DIR_STOP);
   }
@@ -241,7 +245,6 @@ void Navigator::setSpeed(double goalKPH, direction direction) {
 }
 
 void Navigator::setPower(double power, direction direction) {
-  DEBUG(String("POWER: ") + power);
   if (direction == DIR_STOP) {
     drive.write(90);
   } else if (direction == DIR_FORWARD) {
@@ -265,4 +268,13 @@ void Navigator::setSteer(turn turn) {
 
 Navigator::turn Navigator::getSteer() {
   return currentTurn;
+}
+
+
+void Navigator::calibrate() {
+    drive.write(MAX_THROTTLE);
+    delay(2000);
+    drive.write(MIN_THROTTLE);
+    delay(2000);
+    drive.write(90);
 }

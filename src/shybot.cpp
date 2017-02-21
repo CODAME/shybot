@@ -33,6 +33,8 @@
 #define PIN_MOTOR_SWITCH A1
 #define PIN_ADC_CS A5
 
+#define MCP_PIN_CALIBRATE 8
+
 #define FONA_ENABLED 0
 #define I2C_ADDRESS_MOTION 0
 
@@ -112,9 +114,15 @@ void setup(void)
   mcp.begin(I2C_ADDRESS_MOTION);
 
   rpm = new RPMSensor(PIN_RPM);
+  //calibrate if button pressed
+  mcp.pullUp(MCP_PIN_CALIBRATE, HIGH);
+  if(!mcp.digitalRead(MCP_PIN_CALIBRATE)) {
+    navigator->calibrate();
+  }
 
   SPI.begin();
   adc.begin();
+
 
   sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();

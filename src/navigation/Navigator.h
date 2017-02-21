@@ -7,9 +7,6 @@
 #include "store/StoreEntry.h"
 #include "sensor/ProximitySensor.h"
 
-#define MAX_THROTTLE 135
-#define MIN_THROTTLE 50
-
 enum {
   PROXIMITY_RANK = 1,
   RPM_RANK = 2
@@ -71,6 +68,7 @@ class Navigator {
     void setSpeed(double goalKPH, direction direction);
     void setPower(double power, direction direction);
     double getPower();
+    void calibrate();
 
     Suggestion avgSuggestion = Suggestion({ 0, 0, 0});
 
