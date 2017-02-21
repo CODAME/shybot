@@ -43,8 +43,8 @@ Adafruit_MQTT_FONA mqtt(&fona, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY
 
 
 Adafruit_MCP23017 mcp;
-MCP3008 adc = MCP3008(PIN_ADC_CS);
 
+MCP3008 adc = MCP3008(PIN_ADC_CS);
 
 GPSSensor *gps;
 RPMSensor *rpm;
@@ -91,6 +91,11 @@ void readSensors() {
   }
 }
 
+volatile int buttonPressed = false;
+void onButtonPress() {
+  buttonPressed = true;
+}
+
 
 void setup(void)
 {
@@ -110,6 +115,12 @@ void setup(void)
   #endif
 
   mcp.begin(I2C_ADDRESS_MOTION);
+  mcp.setupInterrupts(true, false, LOW);
+  mcp.pullUp(8, HIGH);
+  mcp.setupInterruptPin(8, FALLING);
+
+  pinMode(PIN_MCP_INTERRUPT, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), onButtonPress, FALLING);
 
   rpm = new RPMSensor(PIN_RPM);
 
@@ -139,7 +150,14 @@ void loop(void)
   logStore->graph(storeEntry);
 
   navigator->go(storeEntry);
-
+  if (buttonPressed) {
+    DEBUG("INTERRUPT BUTTON PRESSED");
+    buttonPressed = false;
+  }
+  if(!digitalRead(PIN_MCP_INTERRUPT)) {
+    DEBUG("INLINE BUTTON PRESSED");
+    mcp.digitalRead(8);
+  }
 
   #if FONA_ENABLED
     if (storeEntry->mode == Navigator::STOP) {
@@ -149,7 +167,6 @@ void loop(void)
       }
     } else {
       ioStore->pushQueue(storeEntry);
-      delay(100);
     }
   #endif
   delay(20);
