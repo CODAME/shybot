@@ -73,9 +73,9 @@ void Navigator::go(StoreEntry *entry) {
       ) {
         mode++;
       } else if(currentEntry->rpm.rotations - turnStart < TURN_LENGTH) {
-        safelyFollowHeading((180 + initMotionHeading) % 360, 20);
+        safelyFollowHeading((180 + initMotionHeading) % 360, 10);
       } else {
-        safelyFollowHeading(0, 20);
+        safelyFollowHeading(0, 10);
       }
       break;
     default:
@@ -127,6 +127,10 @@ void Navigator::safelyFollowHeading(int heading, int speed) {
     backup();
   } else if(getDanger()) {
     DEBUG("DANGER");
+    startBackup();
+    setSpeed(0, DIR_STOP);
+  } else if( currentPower == 100 && currentEntry->rpm.rotations == runStart) {
+    DEBUG("STUCK");
     startBackup();
     setSpeed(0, DIR_STOP);
   } else {
