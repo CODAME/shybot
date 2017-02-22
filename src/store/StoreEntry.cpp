@@ -6,7 +6,7 @@
 
 #include <stdio.h>
 
-#define CSV_HEADER "timestamp,heading,latitude,longitude,altitude,kph,rpm,proximity_NE,proximity_S,proximity_NW,motion_N,motion_E,motion_S,motion_W,battery_volts"
+#define CSV_HEADER "timestamp,heading,latitude,longitude,altitude,kph,rpm,wheelKPH,proximity_NE,proximity_S,proximity_NW,motion_N,motion_E,motion_S,motion_W,battery_volts,mode"
 
 
 char csvbuffer[512];

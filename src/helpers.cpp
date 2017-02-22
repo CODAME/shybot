@@ -30,6 +30,19 @@ void DEBUG(uint32_t err) {
   Serial.println(err);
 }
 
+double degToRad(double deg) {
+  return (deg - 180) * M_PI / 180;
+}
+
+double equiDistance(double *p0, double *p1) {
+  int R = 6371 * 1000; // metres
+  double lat0 = degToRad(p0[0]);
+  double lat1 = degToRad(p1[0]);
+  double x = (lat1 - lat0) * cos((lat0 + lat1)/2);
+  double y = lat1 - lat0;
+  return sqrt(x*x + y*y) * R;
+}
+
 uint32_t sbGetTime() {
   return (millis() / 1000) + sbTimeOffsetMS;
 }

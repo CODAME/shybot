@@ -27,8 +27,6 @@ class StoreEntry {
 
     const char* getCSV();
 
-    const char* getSensorData();
-
     const char* getModeName();
 
     BatterySensor::Battery battery;

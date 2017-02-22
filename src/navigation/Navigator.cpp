@@ -21,9 +21,12 @@
 #define MAX_THROTTLE 140
 #define MIN_THROTTLE 50
 
-
 #define DRIVE_TEST 0
 #define FONA_TEST 0
+
+#define LEASH_LENGTH_M 400
+const double leashPoint[2] = {33.862549, -116.499063};
+
 
 
 Navigator::Navigator(int drivePin, int steerPin, int motorSwitchPin) {
@@ -269,7 +272,6 @@ void Navigator::setSteer(turn turn) {
 Navigator::turn Navigator::getSteer() {
   return currentTurn;
 }
-
 
 void Navigator::calibrate() {
     drive.write(MAX_THROTTLE);
