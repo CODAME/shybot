@@ -112,27 +112,3 @@ iostore_status IOStore::store(StoreEntry *entry) {
     return IOSTORE_NET_FAILURE;
   }
 }
-
-iostore_status IOStore::shiftQueue(StoreEntry *entry) {
-  //calling function has responsibility to delete *entry after user.
-  entry = queue.shift();
-  iostore_status ioStatus = store(entry);
-  if(ioStatus != IOSTORE_SUCCESS ) {
-    DEBUG(F("Failed to upload store."));
-  }
-  return ioStatus;
-}
-
-iostore_status IOStore::pushQueue(StoreEntry *entry) {
-  if(queue.size() > QUEUE_SIZE) {
-    delete queue.shift();
-    queue.add(entry);
-  } else {
-    queue.add(entry);
-  }
-  return IOSTORE_SUCCESS;
-}
-
-int IOStore::queueLen() {
-  return queue.size();
-}

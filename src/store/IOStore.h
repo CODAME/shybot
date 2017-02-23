@@ -1,6 +1,5 @@
 #include <Adafruit_FONA.h>
 #include <Adafruit_MQTT_FONA.h>
-#include <LinkedList.h>
 #include "StoreEntry.h"
 
 #define QUEUE_SIZE 30
@@ -28,7 +27,6 @@ class IOStore {
 
     iostore_status connectNetwork();
     iostore_status connectMQTT();
-    LinkedList<StoreEntry*> queue = LinkedList<StoreEntry*>();
     Adafruit_FONA *fona;
     Adafruit_MQTT *mqtt;
     Adafruit_MQTT_Publish *locationFeed;

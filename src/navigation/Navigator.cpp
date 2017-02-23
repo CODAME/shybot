@@ -209,7 +209,7 @@ bool Navigator::headingIsDanger(int heading, direction direction) {
 
 bool Navigator::getDanger(direction direction) {
   int proxNum = -1;
-  double minProximity = 400;
+  double minProximity = 450;
   for (int i=0; i<NUM_PROXIMITY; i++) {
     double distance = currentEntry->proximity[i]->distance;
     double heading = sensor_heading[currentEntry->proximity[i]->orientation];

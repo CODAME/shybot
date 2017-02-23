@@ -2,7 +2,6 @@
 #define SB_NAVIGATOR
 #include <Arduino.h>
 #include <Servo.h>
-#include <LinkedList.h>
 
 #include "store/StoreEntry.h"
 #include "sensor/ProximitySensor.h"
