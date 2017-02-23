@@ -161,29 +161,18 @@ void loop(void)
   logStore->graph(storeEntry);
 
   #if FONA_ENABLED
-    if (storeEntry->mode == Navigator::SCAN) {
-      int status = ioStore->store(storeEntry, &MOTION);
-      if(status == IOSTORE_INTERRUPTED) {
-        DEBUG("INTERRUPTED");
-      }
-      while(ioStore->queueLen() > 0 && !MOTION) {
-        uploadQueued();
-      }
-    } else {
-      ioStore->pushQueue(storeEntry);
-      delay(100);
-    }
-  #endif
-  if(MOTION) {
-    DEBUG("MOTION");
-    DEBUG("MOTION");
-    DEBUG("MOTION");
-    DEBUG("MOTION");
-    DEBUG("MOTION");
-    DEBUG("MOTION");
-    DEBUG("MOTION");
-  }
+  int startMode = storeEntry->mode;
   navigator->go(storeEntry);
+  if (startMode == Navigator::SCAN && storeEntry->mode == Navigator::RUN) {
+    //save entry if just saw motion
+    ioStore->pushQueue(storeEntry);
+  } else if (startMode == Navigator::RUN && storeEntry->mode == Navigator::STOP ) {
+    //upload entries if just stopped
+    ioStore->pushQueue(storeEntry);
+    uploadQueued();
+  }
+  #endif
+
   MOTION = false;
   delay(20);
 }
