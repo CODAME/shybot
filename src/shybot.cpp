@@ -48,6 +48,7 @@ Adafruit_MCP23017 mcp;
 MCP3008 adc = MCP3008(PIN_ADC_CS);
 
 uint32_t lastUpload = millis();
+StoreEntry *triggerEntry;
 
 GPSSensor *gps;
 RPMSensor *rpm;
@@ -144,17 +145,6 @@ void setup(void)
   storeEntry = new StoreEntry();
 }
 
-void uploadQueued() {
-  #if FONA_ENABLED
-    StoreEntry *ioEntry;
-    ioStore->shiftQueue(ioEntry, &MOTION);
-    if (ioEntry != storeEntry) {
-      delete ioEntry;
-    }
-    DEBUG("Uploaded to IO");
-  #endif
-}
-Navigator::Suggestion suggestion;
 void loop(void)
 {
   readSensors();
@@ -164,20 +154,26 @@ void loop(void)
   #if FONA_ENABLED
   int startMode = storeEntry->mode;
   navigator->go(storeEntry);
-  bool modeChanged = (startMode == storeEntry->mode);
+  bool modeChanged = (startMode != storeEntry->mode);
   if (modeChanged && storeEntry->mode == Navigator::RUN) {
+    DEBUG("Switched to RUN");
     //save entry if just saw motion
-    ioStore->pushQueue(storeEntry);
+    triggerEntry = storeEntry;
     storeEntry = new StoreEntry();
+    storeEntry->mode = Navigator::RUN;
   } else if (modeChanged && storeEntry->mode == Navigator::STOP ) {
+    DEBUG("Switched to STOP");
     //upload entries if just stopped
-    ioStore->store(storeEntry, &MOTION);
-    uploadQueued();
+    ioStore->store(triggerEntry);
+    delete triggerEntry;
+    ioStore->store(storeEntry);
     lastUpload = millis();
   } else if (storeEntry->mode == Navigator::SCAN && (millis() - lastUpload > 120000)) {
-    ioStore->store(storeEntry, &MOTION);
+    ioStore->store(storeEntry);
   }
   #endif
+
+  DEBUG(String("freeRam: ") + freeRam());
 
   MOTION = false;
   delay(20);

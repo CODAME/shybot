@@ -18,10 +18,10 @@ class IOStore {
   public:
     IOStore(Adafruit_FONA *myfona, Adafruit_MQTT_FONA *myMqtt);
 
-    iostore_status store(StoreEntry *store, volatile bool *danger);
+    iostore_status store(StoreEntry *store);
     iostore_status ensureConnected();
     iostore_status pushQueue(StoreEntry *entry);
-    iostore_status shiftQueue(StoreEntry *entry, volatile bool *danger);
+    iostore_status shiftQueue(StoreEntry *entry);
     int queueLen();
 
   private:
