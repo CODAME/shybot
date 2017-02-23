@@ -47,6 +47,7 @@ Adafruit_MQTT_FONA mqtt(&fona, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY
 Adafruit_MCP23017 mcp;
 MCP3008 adc = MCP3008(PIN_ADC_CS);
 
+uint32_t lastUpload = millis();
 
 GPSSensor *gps;
 RPMSensor *rpm;
@@ -163,13 +164,18 @@ void loop(void)
   #if FONA_ENABLED
   int startMode = storeEntry->mode;
   navigator->go(storeEntry);
-  if (startMode == Navigator::SCAN && storeEntry->mode == Navigator::RUN) {
+  bool modeChanged = (startMode == storeEntry->mode);
+  if (modeChanged && storeEntry->mode == Navigator::RUN) {
     //save entry if just saw motion
     ioStore->pushQueue(storeEntry);
-  } else if (startMode == Navigator::RUN && storeEntry->mode == Navigator::STOP ) {
+    storeEntry = new StoreEntry();
+  } else if (modeChanged && storeEntry->mode == Navigator::STOP ) {
     //upload entries if just stopped
-    ioStore->pushQueue(storeEntry);
+    ioStore->store(storeEntry, &MOTION);
     uploadQueued();
+    lastUpload = millis();
+  } else if (storeEntry->mode == Navigator::SCAN && (millis() - lastUpload > 120000)) {
+    ioStore->store(storeEntry, &MOTION);
   }
   #endif
 
