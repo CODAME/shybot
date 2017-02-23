@@ -5,6 +5,7 @@
 #include <Adafruit_MQTT.h>
 #include <Adafruit_MQTT_FONA.h>
 #include <Adafruit_MCP23017.h>
+#include <Adafruit_SleepyDog.h>
 #include <MCP3008.h>
 
 #include "credentials.h"
@@ -106,6 +107,7 @@ void readSensors() {
 
 void setup(void)
 {
+  Watchdog.enable(60000);
   Serial.begin(9600);
   navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH);
   battery = new BatterySensor(PIN_BATTERY);
@@ -147,6 +149,7 @@ void setup(void)
 
 void loop(void)
 {
+  Watchdog.reset();
   readSensors();
   sdStore->store(storeEntry);
   logStore->graph(storeEntry);

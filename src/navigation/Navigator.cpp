@@ -58,7 +58,7 @@ void Navigator::go(StoreEntry *entry) {
       break;
     case SCAN:
       DEBUG("SCANNING");
-      if(heading != -1) {
+      if(currentEntry->battery.volts > 7.0 && heading != -1) {
         mode++;
         initMotionHeading = heading;
         runStart = entry->rpm.rotations;
