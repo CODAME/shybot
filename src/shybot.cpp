@@ -29,6 +29,7 @@
 #define PIN_STEER 9
 #define PIN_DRIVE 10
 #define PIN_RPM 11
+#define PIN_FONA_KEY 12 //currently connected to RI, which is useless
 #define PIN_FONA_RST 13
 #define PIN_BATTERY A0
 #define PIN_MOTOR_SWITCH A1
@@ -39,17 +40,21 @@
 #define FONA_ENABLED 1
 #define I2C_ADDRESS_MOTION 0
 
+#define RUN_DURATION 1 * 60 * 1000
+#define OVERRIDE_DURATION 60 * 1000
+#define SLEEP_DURATION 1 * 60 * 1000
+#define COMM_MAX_DURATION 5 * 60 * 1000
+#define MIN_VOLTS 4.0
+
+bool fonaOn = false;
+uint32_t timeModeChanged = 0;
 HardwareSerial *fonaSerial = &Serial1;
 
 Adafruit_FONA fona = Adafruit_FONA(PIN_FONA_RST);
 Adafruit_MQTT_FONA mqtt(&fona, AIO_SERVER, AIO_SERVERPORT, AIO_USERNAME, AIO_KEY);
 
-
 Adafruit_MCP23017 mcp;
 MCP3008 adc = MCP3008(PIN_ADC_CS);
-
-uint32_t lastUpload = millis();
-StoreEntry *triggerEntry;
 
 GPSSensor *gps;
 RPMSensor *rpm;
@@ -80,38 +85,64 @@ MotionSensor *motionSensors[NUM_MOTION] = {
   nullptr
 };
 
-volatile bool MOTION = false;
-void ISR_onMCPInterrupt() {
-  int motionPin = mcp.getLastInterruptPin();
-  digitalRead(motionPin);
-  MOTION = true;
-  storeEntry->motion[MotionSensor::getOrientationByPin(motionPin)]->moving = true;
-}
-
 void readSensors() {
+  DEBUG("READING SENSORS");
   rpm->getRPM(&storeEntry->rpm);
-  if(FONA_ENABLED && storeEntry->rpm.rpm == 0) {
-    storeEntry->position = gps->getPosition();
-  }
   battery->getBattery(&storeEntry->battery);
   for(int i=0; i<NUM_PROXIMITY; i++) {
     if(proximitySensors[i] == nullptr) { continue; }
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
   }
-  for(int i=0; i<NUM_MOTION; i++) {
-    if(motionSensors[i] == nullptr) { continue; }
-    motionSensors[i]->getMotion(storeEntry->motion[i]);
+  DEBUG("READ SENSORS");
+}
+
+void toggleFONA(bool turnOn) {
+  if (turnOn != fonaOn) {
+    digitalWrite(PIN_FONA_KEY, LOW);
+    delay(2000);
+    digitalWrite(PIN_FONA_KEY, HIGH);
+    delay(3000);
+    fonaOn = turnOn;
   }
 }
 
+bool startFONA() {
+  #if FONA_ENABLED
+  toggleFONA(true);
+  fonaSerial->begin(4800);
+  if(!fona.begin(*fonaSerial)) {
+    DEBUG("Failed to communicate with FONA");
+    return false;
+  }
+  Serial.println("setup fona");
+  fona.enableGPS(true);
+  fona.setGPRSNetworkSettings(F(FONA_APN), F(""), F(""));
+  ioStore = new IOStore(&fona, &mqtt);
+  gps = new GPSSensor(&fona);
+  #endif
+  return true;
+}
+
+int stopFONA() {
+  #if FONA_ENABLED
+  //toggleFONA(false);
+  #endif
+}
+
+void setMode(Navigator::nav_mode mode) {
+  storeEntry->mode = mode;
+  timeModeChanged = millis();
+  navigator->startRun(); //just resets the counter, it's safe to run for all changes
+}
 
 void setup(void)
 {
-  Watchdog.enable(60000);
+  //Watchdog.enable(3 * 60 * 1000);
   Serial.begin(9600);
-  navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH);
   battery = new BatterySensor(PIN_BATTERY);
 
+  //pinMode(PIN_FONA_KEY, OUTPUT); 
+ 
   mcp.begin(I2C_ADDRESS_MOTION);
 
   rpm = new RPMSensor(PIN_RPM);
@@ -121,63 +152,76 @@ void setup(void)
     navigator->calibrate();
   }
 
-  pinMode(PIN_MCP_INTERRUPT, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(PIN_MCP_INTERRUPT), ISR_onMCPInterrupt, FALLING);
-  for(int i=0; i<NUM_MOTION; i++) {
-    motionSensors[i]->attachInterrupts();
-  }
-  #if FONA_ENABLED
-  fonaSerial->begin(4800);
-  if(!fona.begin(*fonaSerial)) {
-    DEBUG("Failed to communicate with FONA");
-  }
-  fona.enableGPS(true);
-  fona.setGPRSNetworkSettings(F(FONA_APN), F(""), F(""));
-  ioStore = new IOStore(&fona, &mqtt);
-  gps = new GPSSensor(&fona);
-  #endif
-
-
   SPI.begin();
   adc.begin();
 
-
-  sdStore = new SDStore("readings.txt", PIN_SD_CS);
+  //sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
   storeEntry = new StoreEntry();
+  storeEntry->mode = Navigator::RUN;
+  navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH, storeEntry);
+  delay(1000);
 }
 
 void loop(void)
 {
   Watchdog.reset();
-  readSensors();
-  sdStore->store(storeEntry);
-  logStore->graph(storeEntry);
 
-  #if FONA_ENABLED
-  int startMode = storeEntry->mode;
-  navigator->go(storeEntry);
-  bool modeChanged = (startMode != storeEntry->mode);
-  if (modeChanged && storeEntry->mode == Navigator::RUN) {
-    DEBUG("Switched to RUN");
-    //save entry if just saw motion
-    triggerEntry = storeEntry;
-    storeEntry = new StoreEntry();
-    storeEntry->mode = Navigator::RUN;
-  } else if (modeChanged && storeEntry->mode == Navigator::STOP ) {
-    DEBUG("Switched to STOP");
-    //upload entries if just stopped
-    ioStore->store(triggerEntry);
-    delete triggerEntry;
-    ioStore->store(storeEntry);
-    lastUpload = millis();
-  } else if (storeEntry->mode == Navigator::SCAN && (millis() - lastUpload > 120000)) {
-    ioStore->store(storeEntry);
+  if (storeEntry->mode != Navigator::SLEEP) {
+    readSensors();
+    //sdStore->store(storeEntry);
+    logStore->graph(storeEntry);
   }
-  #endif
 
+  if (storeEntry->mode == Navigator::RUN) {
+    DEBUG("Mode: RUN");
+    if (storeEntry->battery.volts < MIN_VOLTS) {
+      DEBUG("VOLTAGE IS TOO LOW TO RUN");
+      setMode(Navigator::SLEEP);
+    } else if (millis() - timeModeChanged > RUN_DURATION) {
+      navigator->stop();
+      setMode(Navigator::SLEEP);
+    } else {
+      navigator->go();
+    }
+  } else if (storeEntry->mode == Navigator::OVERRIDE) {
+    DEBUG("Mode: OVERRIDE");
+    if (millis() - timeModeChanged < OVERRIDE_DURATION) {
+      navigator->followOverride();
+      navigator->stop();
+    } else {
+      setMode(Navigator::SLEEP);
+    }
+  } else if  (storeEntry->mode == Navigator::COMM) {
+    bool shouldOverride = false;
+    #if FONA_ENABLED
+    DEBUG("Mode: COMM");
+    startFONA();
+    //storeEntry->position = gps->getPosition();
+    while(ioStore->ensureConnected() != IOSTORE_SUCCESS && millis() - timeModeChanged < COMM_MAX_DURATION) {
+      delay(1000);
+      DEBUG("RETRYING IOSTORE");
+    }
+    ioStore->store(storeEntry);
+    stopFONA();
+    #else
+    DEBUG("FONA disabled. Skipping mode comm.")
+    #endif
+    //check for override request and set mode accordingly
+    if (shouldOverride) {
+      setMode(Navigator::OVERRIDE);
+    } else {
+      setMode(Navigator::RUN);
+    }
+  } else if (storeEntry->mode == Navigator::SLEEP) {
+    DEBUG("Mode: SLEEP");
+    if (millis() - timeModeChanged > SLEEP_DURATION) {
+      setMode(Navigator::COMM);
+    }
+  } else {
+    DEBUG(String("Mode Unknown: ") + storeEntry->mode);
+  }
   DEBUG(String("freeRam: ") + freeRam());
 
-  MOTION = false;
-  delay(20);
+  delay(100);
 }

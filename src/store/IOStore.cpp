@@ -107,6 +107,7 @@ iostore_status IOStore::store(StoreEntry *entry) {
     return fonaStatus;
   }
   if (sensorFeed->publish(entry->getCSV())) {
+    DEBUG("PUBLISHED!");
     return IOSTORE_SUCCESS;
   } else {
     return IOSTORE_NET_FAILURE;

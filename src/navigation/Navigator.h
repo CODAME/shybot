@@ -34,9 +34,10 @@ class Navigator {
     };
 
     enum nav_mode {
-      STOP,
-      SCAN,
-      RUN
+      SLEEP,
+      RUN,
+      COMM,
+      OVERRIDE
     };
 
     struct Suggestion {
@@ -45,17 +46,17 @@ class Navigator {
       int speed;
     };
 
-    Navigator(int drivePin, int steerPin, int motorSwitch);
+    Navigator(int drivePin, int steerPin, int motorSwitch, StoreEntry *storeEntry);
 
-    void go(StoreEntry *entry);
+    void go();
+    void followOverride();
     void backup(double heading = 0);
+    void stop();
+    void startRun();
     void startBackup();
     void stopBackup();
-    void run(int heading);
-    void search();
     void safelyFollowHeading(int heading, int speed = 5);
     void followHeading(int heading, int speed = 5);
-    int getMotionHeading();
     int getApproachHeading();
     ProximitySensor::Proximity* getMinProximity();
     ProximitySensor::Proximity* getMaxProximity();
@@ -76,6 +77,8 @@ class Navigator {
 
     Servo drive;
     Servo steer;
+    int drivePin;
+    int steerPin;
     int motorSwitch;
     StoreEntry *currentEntry;
     double currentPower = 0;
@@ -91,7 +94,6 @@ class Navigator {
     int runStart = 0;
     int runStartTime = 0;
     int initMotionHeading = 180;
-    int mode = STOP;
 
 };
 

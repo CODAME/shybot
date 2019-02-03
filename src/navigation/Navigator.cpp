@@ -12,87 +12,68 @@
 #define POWER_INCREMENT_FREQ 500
 #define DANGER_FREQ 500
 #define TURN_LENGTH 50
-#define BACKUP_LENGTH 10
+#define BACKUP_LENGTH 100
 #define BACKUP_TRIES 5
 #define RUN_LENGTH 500
 #define RUN_MAX_TIME 120000
 #define STOP_MS 30000
-#define START_POWER 50
+#define START_POWER 15
 #define MAX_THROTTLE 140
-#define MIN_THROTTLE 50
+#define MIN_THROTTLE 20
 
 #define DRIVE_TEST 0
 #define FONA_TEST 0
 
-#define LEASH_LENGTH_M 400
-const double leashPoint[2] = {33.862549, -116.499063};
-
-
-
-Navigator::Navigator(int drivePin, int steerPin, int motorSwitchPin) {
-  drive.attach(drivePin);
-  steer.attach(steerPin);
+Navigator::Navigator(int _drivePin, int _steerPin, int motorSwitchPin, StoreEntry *storeEntry) {
+  drivePin = _drivePin;
+  steerPin = _steerPin;
   motorSwitch = motorSwitchPin;
   pinMode(motorSwitch, OUTPUT);
+  currentEntry = storeEntry;
 }
 
-void Navigator::go(StoreEntry *entry) {
-  currentEntry = entry;
-  int heading = getMotionHeading();
+void Navigator::go() {
+  drive.attach(drivePin);
+  steer.attach(steerPin);
+  DEBUG(String("POWER: ") + currentPower);
 
-  #if DRIVE_TEST
-    mode = RUN;
-  #endif
-  #if FONA_TEST
-    mode = SCAN;
-  #endif
+  DEBUG("RUNNING");
+  DEBUG(currentEntry->rpm.rotations - runStart);
+  if(currentEntry->rpm.rotations - runStart > RUN_LENGTH ||
+    millis() - runStartTime > RUN_MAX_TIME
+  ) {
+    DEBUG("Already went too far.");
+    stop();
+    return;
+  } else if(currentEntry->rpm.rotations - turnStart < TURN_LENGTH) {
+    safelyFollowHeading((180 + initMotionHeading) % 360, 5);
+  } else {
+    safelyFollowHeading(0, 5);
+  }
+}
 
-  switch(mode) {
-    case STOP:
-      DEBUG("STOPPING");
-      setSpeed(0, DIR_STOP);
-      if(millis() - stopTime > STOP_MS) {
-        stopTime = millis();
-        mode++;
-      }
-      break;
-    case SCAN:
-      DEBUG("SCANNING");
-      if(currentEntry->battery.volts > 7.0 && heading != -1) {
-        mode++;
-        initMotionHeading = heading;
-        runStart = entry->rpm.rotations;
-        runStartTime = millis();
-      }
-      break;
-    case RUN:
-      DEBUG("RUNNING");
-      DEBUG(currentEntry->rpm.rotations - runStart);
-      if(currentEntry->rpm.rotations - runStart > RUN_LENGTH ||
-        millis() - runStartTime > RUN_MAX_TIME
-      ) {
-        mode++;
-      } else if(currentEntry->rpm.rotations - turnStart < TURN_LENGTH) {
-        safelyFollowHeading((180 + initMotionHeading) % 360, 10);
-      } else {
-        safelyFollowHeading(0, 10);
-      }
-      break;
-    default:
-      mode = STOP;
-      stopTime = millis();
-      runStartTime = millis();
-  };
-  currentEntry->mode = mode;
+void Navigator::stop() {
+  setPower(0, DIR_STOP);
+  steer.detach();
+  drive.detach();
+}
+
+void Navigator::followOverride() {
+  //do override behavior
+}
+
+void Navigator::startRun() {
+  runStart = currentEntry->rpm.rotations;
+  runStartTime = millis();
 }
 
 void Navigator::startBackup() {
   DEBUG("START BACKUP");
   backupGoal = currentEntry->rpm.rotations + BACKUP_LENGTH;
-  if(millis() % 30000 < 5000) {
+  //if(millis() % 30000 < 5000) {
     countBackups = 0;
-  }
-  countBackups++;
+  //}
+  //countBackups++;
 };
 
 void Navigator::stopBackup() {
@@ -114,11 +95,6 @@ void Navigator::backup(double heading) {
     setSteer(RIGHT);
   }
   setSpeed(7, DIR_REVERSE);
-}
-
-void Navigator::search() {
-  ProximitySensor::Proximity *goal = getMaxProximity();
-  safelyFollowHeading(goal->orientation);
 }
 
 void Navigator::safelyFollowHeading(int heading, int speed) {
@@ -151,24 +127,6 @@ void Navigator::followHeading(int heading, int speed) {
   } else {
     setSteer(RIGHT);
     setSpeed(speed, DIR_FORWARD);
-  }
-}
-
-int Navigator::getMotionHeading() {
-  double sumCos = 0;
-  double sumSin = 0;
-  int countMotion = 0;
-  for(int i=0; i<NUM_MOTION; i++) {
-    if(currentEntry->motion[i]->moving) {
-      countMotion++;
-      sumCos += cos(M_PI * sensor_heading[i] / 180);
-      sumSin += sin(M_PI * sensor_heading[i] / 180);
-    }
-  }
-  if(countMotion) {
-    return (int) ((180 * atan2(sumSin/countMotion, sumCos/countMotion) / M_PI) + 360) % 360;
-  } else {
-    return -1;
   }
 }
 

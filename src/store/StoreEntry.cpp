@@ -78,12 +78,14 @@ const char* StoreEntry::getCSV() {
 const char* StoreEntry::getModeName() {
   String foo = String("foo");
   switch(mode) {
-    case Navigator::STOP:
-      return "STOPPED";
-    case Navigator::SCAN:
-      return "SCANNING";
     case Navigator::RUN:
       return "RUNNING";
+    case Navigator::OVERRIDE:
+      return "OVERRIDE";
+    case Navigator::SLEEP:
+      return "SLEEPING";
+    case Navigator::COMM:
+      return "COMM";
     default:
       return "INVALID";
   }
