@@ -11,6 +11,7 @@ class GPSSensor {
     time_t getTime();
     bool gpsSuccess = false;
     bool gsmSuccess = false;
+    int numRetries = 0;
     bool didSetTime = false;
 
   private:

@@ -3,6 +3,9 @@
 #include "GPSSensor.h"
 #include <time.h>
 
+#define GPS_RETRIES 10
+#define GPS_INTERVAL 30000
+
 char buf[120];
 
 GPSSensor::GPSSensor(Adafruit_FONA *myFona) {
@@ -16,6 +19,9 @@ GPSSensor::Position GPSSensor::getPosition() {
   float heading = 0.0;
   float altitude = 0.0;
   gpsSuccess = fona->getGPS(&latitude, &longitude, &speedKPH, &heading, &altitude);
+  if (latitude == 0.0 && longitude == 0.0) {
+    gpsSuccess = false;
+  }
   if(gpsSuccess && !didSetTime) {
     if(sbSetTimeOffset(getTime()) == 0) {
       didSetTime = true;

@@ -44,10 +44,10 @@
 #define RUN_DURATION 1 * 60 * 1000
 #define OVERRIDE_DURATION 60 * 1000
 #define SLEEP_DURATION 1 * 60 * 1000
-#define COMM_MAX_DURATION 5 * 60 * 1000
+#define COMM_MAX_DURATION 3 * 60 * 1000
 #define MIN_VOLTS 4.5
 
-bool fonaOn = true; //defaults to ON
+bool fonaOn = false; //always check on startup
 uint32_t timeModeChanged = 0;
 HardwareSerial *fonaSerial = &Serial1;
 
@@ -94,8 +94,6 @@ void readSensors() {
     if(proximitySensors[i] == nullptr) { continue; }
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
   }
-  if(FONA_ENABLED) {
-  }
   DEBUG("READ SENSORS");
 }
 
@@ -106,7 +104,7 @@ void toggleFONA(bool turnOn) {
     delay(2000);
     digitalWrite(PIN_FONA_KEY, HIGH);
     delay(3000);
-    fonaOn = turnOn;
+    fonaOn = digitalRead(PIN_FONA_PS);
   }
 }
 
@@ -163,15 +161,16 @@ void setup(void)
 
   logStore = new LogStore();
   storeEntry = new StoreEntry();
-  storeEntry->mode = Navigator::RUN;
+  //storeEntry->mode = Navigator::RUN;
+  storeEntry->mode = Navigator::COMM;
   navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH, storeEntry);
   delay(1000);
-  //Watchdog.enable(3 * 60 * 1000);
+  Watchdog.enable(16 * 1000); //this is the max apparently
 }
 
 void loop(void)
 {
-  //Watchdog.reset();
+  Watchdog.reset();
 
   if (storeEntry->mode != Navigator::SLEEP) {
     readSensors();
@@ -202,24 +201,28 @@ void loop(void)
     bool shouldOverride = false;
     #if FONA_ENABLED
     DEBUG("Mode: COMM");
-    startFONA();
-    //storeEntry->position = gps->getPosition();
-    while(ioStore->ensureConnected() != IOSTORE_SUCCESS && millis() - timeModeChanged < COMM_MAX_DURATION) {
-      delay(1000);
-      DEBUG("RETRYING IOSTORE");
+    if(!fonaOn) {
+      startFONA();
     }
-    storeEntry->position = gps->getPosition();
-    ioStore->store(storeEntry);
-    stopFONA();
+    if (fonaOn) {
+      while(ioStore->ensureConnected() != IOSTORE_SUCCESS && millis() - timeModeChanged < COMM_MAX_DURATION) {
+        delay(1000);
+        DEBUG("RETRYING IOSTORE");
+        Watchdog.reset();
+      }
+      storeEntry->position = gps->getPosition();
+      ioStore->store(storeEntry);
+    }
     #else
     DEBUG("FONA disabled. Skipping mode comm.");
     #endif
     //check for override request and set mode accordingly
     if (shouldOverride) {
       setMode(Navigator::OVERRIDE);
-    } else {
+    } else if (gps->gpsSuccess || millis() - timeModeChanged < COMM_MAX_DURATION) {
+      stopFONA();
       setMode(Navigator::RUN);
-    }
+    } // else try GPS again
   } else if (storeEntry->mode == Navigator::SLEEP) {
     DEBUG("Mode: SLEEP");
     if (millis() - timeModeChanged > SLEEP_DURATION) {
