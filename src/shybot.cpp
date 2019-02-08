@@ -25,11 +25,12 @@
 
 #define PIN_SD_CS 4
 #define PIN_MCP_INTERRUPT 5
+#define PIN_FONA_PS A2
 #define PIN_PROXIMITY_TRIGGER 6
 #define PIN_STEER 9
 #define PIN_DRIVE 10
 #define PIN_RPM 11
-#define PIN_FONA_KEY 12 //currently connected to RI, which is useless
+#define PIN_FONA_KEY 12 
 #define PIN_FONA_RST 13
 #define PIN_BATTERY A0
 #define PIN_MOTOR_SWITCH A1
@@ -44,9 +45,9 @@
 #define OVERRIDE_DURATION 60 * 1000
 #define SLEEP_DURATION 1 * 60 * 1000
 #define COMM_MAX_DURATION 5 * 60 * 1000
-#define MIN_VOLTS 4.0
+#define MIN_VOLTS 4.5
 
-bool fonaOn = false;
+bool fonaOn = true; //defaults to ON
 uint32_t timeModeChanged = 0;
 HardwareSerial *fonaSerial = &Serial1;
 
@@ -93,10 +94,14 @@ void readSensors() {
     if(proximitySensors[i] == nullptr) { continue; }
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
   }
+  if(FONA_ENABLED) {
+    storeEntry->position = gps->getPosition();
+  }
   DEBUG("READ SENSORS");
 }
 
 void toggleFONA(bool turnOn) {
+  fonaOn = digitalRead(PIN_FONA_PS);
   if (turnOn != fonaOn) {
     digitalWrite(PIN_FONA_KEY, LOW);
     delay(2000);
@@ -123,9 +128,9 @@ bool startFONA() {
   return true;
 }
 
-int stopFONA() {
+void stopFONA() {
   #if FONA_ENABLED
-  //toggleFONA(false);
+  toggleFONA(false);
   #endif
 }
 
@@ -137,11 +142,14 @@ void setMode(Navigator::nav_mode mode) {
 
 void setup(void)
 {
-  //Watchdog.enable(3 * 60 * 1000);
+ // Watchdog.enable(3 * 60 * 1000);
   Serial.begin(9600);
+  while(!Serial) {}
   battery = new BatterySensor(PIN_BATTERY);
 
-  //pinMode(PIN_FONA_KEY, OUTPUT); 
+  pinMode(PIN_FONA_KEY, OUTPUT); 
+  digitalWrite(PIN_FONA_KEY, HIGH); 
+  pinMode(PIN_FONA_PS, INPUT_PULLUP);
  
   mcp.begin(I2C_ADDRESS_MOTION);
 
@@ -205,7 +213,7 @@ void loop(void)
     ioStore->store(storeEntry);
     stopFONA();
     #else
-    DEBUG("FONA disabled. Skipping mode comm.")
+    DEBUG("FONA disabled. Skipping mode comm.");
     #endif
     //check for override request and set mode accordingly
     if (shouldOverride) {

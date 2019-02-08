@@ -12,14 +12,16 @@
 #define POWER_INCREMENT_FREQ 500
 #define DANGER_FREQ 500
 #define TURN_LENGTH 50
-#define BACKUP_LENGTH 100
+#define BACKUP_LENGTH 50
 #define BACKUP_TRIES 5
 #define RUN_LENGTH 500
 #define RUN_MAX_TIME 120000
 #define STOP_MS 30000
 #define START_POWER 15
 #define MAX_THROTTLE 140
+#define MAX_THROTTLE_AUTO 120
 #define MIN_THROTTLE 20
+#define MIN_THROTTLE_AUTO 40
 
 #define DRIVE_TEST 0
 #define FONA_TEST 0
@@ -54,6 +56,8 @@ void Navigator::go() {
 
 void Navigator::stop() {
   setPower(0, DIR_STOP);
+  setSteer(CENTER);
+  delay(1000);
   steer.detach();
   drive.detach();
 }
@@ -67,8 +71,9 @@ void Navigator::startRun() {
   runStartTime = millis();
 }
 
-void Navigator::startBackup() {
+void Navigator::startBackup(int heading) {
   DEBUG("START BACKUP");
+  backupHeading = heading;
   backupGoal = currentEntry->rpm.rotations + BACKUP_LENGTH;
   //if(millis() % 30000 < 5000) {
     countBackups = 0;
@@ -80,16 +85,19 @@ void Navigator::stopBackup() {
   backupGoal = currentEntry->rpm.rotations;
 }
 
-void Navigator::backup(double heading) {
+void Navigator::backup() {
+  backup(backupHeading);
+}
+
+void Navigator::backup(int heading) {
   DEBUG(String("COUNT BACKUPS: ") + countBackups);
-  double newHeading = heading;
-  if(countBackups > BACKUP_TRIES) {
-    newHeading = random(360);
-  } else if(getDanger(DIR_REVERSE)) {
+  if (getDanger(DIR_REVERSE)) {
     DEBUG("REVERSE DANGER");
     stopBackup();
   }
-  if (newHeading > 180) {
+  if (backupHeading == 180) {
+    setSteer(CENTER);
+  } if (backupHeading > 180) {
     setSteer(LEFT);
   } else {
     setSteer(RIGHT);
@@ -97,17 +105,28 @@ void Navigator::backup(double heading) {
   setSpeed(7, DIR_REVERSE);
 }
 
+int Navigator::getBackupHeading() {
+  sensor_orientation orientation = getMinProximity()->orientation;
+  if (orientation == SENSOR_ORIENTATION_NE) {
+    return 225;
+  } else if (orientation == SENSOR_ORIENTATION_NW) {
+    return 135;
+  } else {
+    return 180;
+  }
+}
+
 void Navigator::safelyFollowHeading(int heading, int speed) {
   if(backupGoal - currentEntry->rpm.rotations > 0) {
     DEBUG(String("backup: ") + (backupGoal - currentEntry->rpm.rotations));
-    backup();
+    backup(heading);
   } else if(getDanger()) {
     DEBUG("DANGER");
-    startBackup();
+    startBackup(getBackupHeading());
     setSpeed(0, DIR_STOP);
   } else if( currentPower == 100 && currentEntry->rpm.rotations == runStart) {
     DEBUG("STUCK");
-    startBackup();
+    startBackup(180);
     setSpeed(0, DIR_STOP);
   } else {
     DEBUG(String("HEADING: ") + heading);
@@ -117,7 +136,7 @@ void Navigator::safelyFollowHeading(int heading, int speed) {
 
 void Navigator::followHeading(int heading, int speed) {
   if(heading > 90 && heading < 225) {
-    backup(heading);
+    backup();
   } else if ( heading < 10 || heading > 350) {
     setSteer(CENTER);
     setSpeed(speed, DIR_FORWARD);
@@ -213,9 +232,9 @@ void Navigator::setPower(double power, direction direction) {
   if (direction == DIR_STOP) {
     drive.write(90);
   } else if (direction == DIR_FORWARD) {
-    drive.write(map(power, 0, 100, 100, MAX_THROTTLE));
+    drive.write(map(power, 0, 100, 100, MAX_THROTTLE_AUTO));
   } else {
-    int mappedPower = map(power, 0, 100, 90, MIN_THROTTLE);
+    int mappedPower = map(power, 0, 100, 90, MIN_THROTTLE_AUTO);
     drive.write(mappedPower);
   }
   currentDirection = direction;

@@ -50,10 +50,11 @@ class Navigator {
 
     void go();
     void followOverride();
-    void backup(double heading = 0);
+    void backup();
+    void backup(int heading);
     void stop();
     void startRun();
-    void startBackup();
+    void startBackup(int heading);
     void stopBackup();
     void safelyFollowHeading(int heading, int speed = 5);
     void followHeading(int heading, int speed = 5);
@@ -62,6 +63,7 @@ class Navigator {
     ProximitySensor::Proximity* getMaxProximity();
     bool getDanger();
     bool getDanger(direction direction);
+    int getBackupHeading();
     double getAvgProximity();
     void setSteer(turn turn);
     turn getSteer();
@@ -88,6 +90,7 @@ class Navigator {
     uint32_t turnStart = 0;
     int lastIncrement = 0;
     int backupGoal = 0;
+    int backupHeading = 0;
     int countBackups = 0;
     uint32_t lastDanger = 0;
     int stopTime = 0;
