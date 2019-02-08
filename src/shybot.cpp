@@ -30,7 +30,7 @@
 #define PIN_STEER 9
 #define PIN_DRIVE 10
 #define PIN_RPM 11
-#define PIN_FONA_KEY 12 
+#define PIN_FONA_KEY 12
 #define PIN_FONA_RST 13
 #define PIN_BATTERY A0
 #define PIN_MOTOR_SWITCH A1
@@ -95,7 +95,6 @@ void readSensors() {
     proximitySensors[i]->getProximity(storeEntry->proximity[i]);
   }
   if(FONA_ENABLED) {
-    storeEntry->position = gps->getPosition();
   }
   DEBUG("READ SENSORS");
 }
@@ -142,15 +141,14 @@ void setMode(Navigator::nav_mode mode) {
 
 void setup(void)
 {
- // Watchdog.enable(3 * 60 * 1000);
   Serial.begin(9600);
   while(!Serial) {}
   battery = new BatterySensor(PIN_BATTERY);
 
-  pinMode(PIN_FONA_KEY, OUTPUT); 
-  digitalWrite(PIN_FONA_KEY, HIGH); 
+  pinMode(PIN_FONA_KEY, OUTPUT);
+  digitalWrite(PIN_FONA_KEY, HIGH);
   pinMode(PIN_FONA_PS, INPUT_PULLUP);
- 
+
   mcp.begin(I2C_ADDRESS_MOTION);
 
   rpm = new RPMSensor(PIN_RPM);
@@ -163,17 +161,17 @@ void setup(void)
   SPI.begin();
   adc.begin();
 
-  //sdStore = new SDStore("readings.txt", PIN_SD_CS);
   logStore = new LogStore();
   storeEntry = new StoreEntry();
   storeEntry->mode = Navigator::RUN;
   navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH, storeEntry);
   delay(1000);
+  //Watchdog.enable(3 * 60 * 1000);
 }
 
 void loop(void)
 {
-  Watchdog.reset();
+  //Watchdog.reset();
 
   if (storeEntry->mode != Navigator::SLEEP) {
     readSensors();
@@ -210,6 +208,7 @@ void loop(void)
       delay(1000);
       DEBUG("RETRYING IOSTORE");
     }
+    storeEntry->position = gps->getPosition();
     ioStore->store(storeEntry);
     stopFONA();
     #else

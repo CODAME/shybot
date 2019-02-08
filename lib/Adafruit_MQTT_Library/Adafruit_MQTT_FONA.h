@@ -51,7 +51,7 @@ class Adafruit_MQTT_FONA : public Adafruit_MQTT {
     char server[40];
     strncpy(server, servername, 40);
 #ifdef ADAFRUIT_SLEEPYDOG_H
-    Watchdog.reset();
+    //Watchdog.reset();
 #endif
 
     // connect to server
@@ -107,13 +107,13 @@ class Adafruit_MQTT_FONA : public Adafruit_MQTT {
         }
       }
 #ifdef ADAFRUIT_SLEEPYDOG_H
-      Watchdog.reset();
+      //Watchdog.reset();
 #endif
       timeout -= MQTT_FONA_INTERAVAILDELAY;
       timeout -= MQTT_FONA_QUERYDELAY; // this is how long it takes to query the FONA for avail()
       delay(MQTT_FONA_INTERAVAILDELAY);
     }
-    
+
     return len;
   }
 
