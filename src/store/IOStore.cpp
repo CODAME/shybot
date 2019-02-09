@@ -6,6 +6,7 @@
 #include "helpers.h"
 
 #include "IOStore.h"
+#include "navigation/navigator.h"
 
 #define MAXTXFAILURES 5
 
@@ -14,6 +15,7 @@
 #define BATTERY_VOLTS_FEED AIO_USERNAME "/feeds/battery-volts"
 #define SENSOR_FEED AIO_USERNAME "/feeds/sensors"
 #define MODE_FEED AIO_USERNAME "/feeds/mode"
+#define DIRECT_DRIVE_FEED AIO_USERNAME "/feeds/direct-drive"
 
 #define halt(s) { DEBUG(F( s )); delay(1000); NVIC_SystemReset(); }
 
@@ -26,10 +28,8 @@ IOStore::IOStore(Adafruit_FONA *myFona, Adafruit_MQTT_FONA *myMqtt) {
   fona = myFona;
   mqtt = myMqtt;
   locationFeed = new Adafruit_MQTT_Publish(mqtt, LOCATION_FEED, QOS_LEVEL);
-  headingFeed = new Adafruit_MQTT_Publish(mqtt, HEADING_FEED, QOS_LEVEL);
-  batteryVoltsFeed = new Adafruit_MQTT_Publish(mqtt, BATTERY_VOLTS_FEED, QOS_LEVEL);
   sensorFeed = new Adafruit_MQTT_Publish(mqtt, SENSOR_FEED, QOS_LEVEL);
-  modeFeed = new Adafruit_MQTT_Publish(mqtt, MODE_FEED, QOS_LEVEL);
+  directDriveFeed = new Adafruit_MQTT_Subscribe(mqtt, DIRECT_DRIVE_FEED, 3);
 };
 
 iostore_status IOStore::connectNetwork() {
@@ -77,6 +77,8 @@ iostore_status IOStore::connectMQTT() {
 
   int8_t ret, retries = 5;
 
+  mqtt->subscribe(directDriveFeed);
+
   while (retries && (ret = mqtt->connect()) != 0) {
     switch (ret) {
       case 1: Serial.println(F("Wrong protocol")); break;
@@ -101,12 +103,32 @@ iostore_status IOStore::connectMQTT() {
   return IOSTORE_SUCCESS;
 }
 
+bool IOStore::getOverrides(StoreEntry *entry) {
+  iostore_status fonaStatus = ensureConnected();
+  if (fonaStatus != IOSTORE_SUCCESS) {
+    return fonaStatus;
+  }
+  Adafruit_MQTT_Subscribe *sub;
+  DEBUG("READING SUBSCRIPTION");
+  sub = mqtt->readSubscription(2000);
+  if (sub == directDriveFeed) {
+    DEBUG("ENTERING DIRECT DRIVE");
+    entry->mode = Navigator::DIRECT;
+  } else {
+    DEBUG("NO OVERRIDES FOUND");
+  }
+  return fonaStatus;
+}
+
 iostore_status IOStore::store(StoreEntry *entry) {
   iostore_status fonaStatus = ensureConnected();
   if(fonaStatus != IOSTORE_SUCCESS) {
     return fonaStatus;
   }
-  if (sensorFeed->publish(entry->getCSV())) {
+  bool ok = true;
+  ok = ok && sensorFeed->publish(entry->getCSV());
+  ok = ok && locationFeed->publish(entry->getCSVLocation());
+  if (ok) {
     DEBUG("PUBLISHED!");
     return IOSTORE_SUCCESS;
   } else {

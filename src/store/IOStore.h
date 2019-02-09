@@ -18,6 +18,8 @@ class IOStore {
     IOStore(Adafruit_FONA *myfona, Adafruit_MQTT_FONA *myMqtt);
 
     iostore_status store(StoreEntry *store);
+    bool getOverrides(StoreEntry *entry);
+    char* getLastRead(Adafruit_MQTT_Subscribe *sub);
     iostore_status ensureConnected();
     iostore_status pushQueue(StoreEntry *entry);
     iostore_status shiftQueue(StoreEntry *entry);
@@ -27,11 +29,10 @@ class IOStore {
 
     iostore_status connectNetwork();
     iostore_status connectMQTT();
+    bool compareSub(Adafruit_MQTT_Subscribe *sub, const char *data);
     Adafruit_FONA *fona;
     Adafruit_MQTT *mqtt;
     Adafruit_MQTT_Publish *locationFeed;
-    Adafruit_MQTT_Publish *headingFeed;
-    Adafruit_MQTT_Publish *batteryVoltsFeed;
     Adafruit_MQTT_Publish *sensorFeed;
-    Adafruit_MQTT_Publish *modeFeed;
+    Adafruit_MQTT_Subscribe *directDriveFeed;
 };

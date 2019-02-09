@@ -65,6 +65,9 @@ void Navigator::stop() {
 }
 
 void Navigator::directDrive() {
+  DEBUG("DIRECT DRIVE");
+  drive.attach(drivePin);
+  steer.attach(steerPin);
   int steerAmt = pulseIn(servoControlPin, HIGH) / 4 - 285;
   steer.write(constrain(steerAmt, 30, 200));
   int driveAmt = pulseIn(motorControlPin, HIGH) / 4 - 285;

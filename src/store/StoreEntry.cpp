@@ -80,8 +80,8 @@ const char* StoreEntry::getModeName() {
   switch(mode) {
     case Navigator::RUN:
       return "RUNNING";
-    case Navigator::OVERRIDE:
-      return "OVERRIDE";
+    case Navigator::DIRECT:
+      return "DIRECT DRIVE";
     case Navigator::SLEEP:
       return "SLEEPING";
     case Navigator::COMM:

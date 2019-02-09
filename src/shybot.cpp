@@ -44,9 +44,9 @@
 #define I2C_ADDRESS_MOTION 0
 
 #define RUN_DURATION 2 * 60 * 1000
-#define OVERRIDE_DURATION 60 * 1000
+#define DIRECT_DURATION 1 * 60 * 1000
 #define SLEEP_DURATION 1 * 60 * 1000
-#define COMM_MAX_DURATION 1 * 60 * 1000
+#define COMM_MAX_DURATION 3 * 60 * 1000
 #define MIN_VOLTS 4.5
 //#define MIN_VOLTS 0
 
@@ -134,7 +134,7 @@ void stopFONA() {
   #endif
 }
 
-void setMode(Navigator::nav_mode mode) {
+void setMode(int mode) {
   storeEntry->mode = mode;
   timeModeChanged = millis();
   navigator->startRun(); //just resets the counter, it's safe to run for all changes
@@ -163,8 +163,8 @@ void setup(void)
 
   logStore = new LogStore();
   storeEntry = new StoreEntry();
-  storeEntry->mode = Navigator::RUN;
-  //storeEntry->mode = Navigator::COMM;
+  //storeEntry->mode = Navigator::RUN;
+  storeEntry->mode = Navigator::COMM;
   navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_SERVO_CONTROL, PIN_MOTOR_CONTROL, storeEntry);
   delay(1000);
   Watchdog.enable(16 * 1000); //this is the max apparently
@@ -191,13 +191,13 @@ void loop(void)
     } else {
       navigator->go();
     }
-  } else if (storeEntry->mode == Navigator::OVERRIDE) {
-    DEBUG("Mode: OVERRIDE");
-    if (millis() - timeModeChanged < OVERRIDE_DURATION) {
-      navigator->followOverride();
+  } else if (storeEntry->mode == Navigator::DIRECT) {
+    DEBUG("Mode: DIRECT");
+    if (millis() - timeModeChanged < DIRECT_DURATION) {
+      navigator->directDrive();
       navigator->stop();
     } else {
-      setMode(Navigator::SLEEP);
+      setMode(Navigator::COMM);
     }
   } else if  (storeEntry->mode == Navigator::COMM) {
     bool shouldOverride = false;
@@ -213,18 +213,21 @@ void loop(void)
         Watchdog.reset();
       }
       storeEntry->position = gps->getPosition();
+      Watchdog.reset();
       ioStore->store(storeEntry);
+      Watchdog.reset();
+      ioStore->getOverrides(storeEntry);
+      if (storeEntry->mode != Navigator::COMM) {
+        setMode(storeEntry->mode);
+      } else if (gps->gpsSuccess || millis() - timeModeChanged > COMM_MAX_DURATION) {
+        stopFONA();
+        setMode(Navigator::RUN);
+      } // else try GPS again
     }
     #else
     DEBUG("FONA disabled. Skipping mode comm.");
     #endif
     //check for override request and set mode accordingly
-    if (shouldOverride) {
-      setMode(Navigator::OVERRIDE);
-    } else if (gps->gpsSuccess || millis() - timeModeChanged > COMM_MAX_DURATION) {
-      stopFONA();
-      setMode(Navigator::RUN);
-    } // else try GPS again
   } else if (storeEntry->mode == Navigator::SLEEP) {
     DEBUG("Mode: SLEEP");
     if (millis() - timeModeChanged > SLEEP_DURATION) {

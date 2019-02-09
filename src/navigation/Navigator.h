@@ -37,7 +37,11 @@ class Navigator {
       SLEEP,
       RUN,
       COMM,
-      OVERRIDE
+      OVERRIDE_FWD,
+      OVERRIDE_BACK,
+      OVERRIDE_LEFT,
+      OVERRIDE_RIGHT,
+      DIRECT
     };
 
     struct Suggestion {
