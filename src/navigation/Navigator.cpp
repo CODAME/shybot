@@ -26,11 +26,13 @@
 #define DRIVE_TEST 0
 #define FONA_TEST 0
 
-Navigator::Navigator(int _drivePin, int _steerPin, int motorSwitchPin, StoreEntry *storeEntry) {
+Navigator::Navigator(int _drivePin, int _steerPin, int _servoControlPin, int _motorControlPin, StoreEntry *storeEntry) {
   drivePin = _drivePin;
   steerPin = _steerPin;
-  motorSwitch = motorSwitchPin;
-  pinMode(motorSwitch, OUTPUT);
+  servoControlPin = _servoControlPin;
+  motorControlPin = _motorControlPin;
+  pinMode(servoControlPin, INPUT);
+  pinMode(motorControlPin, INPUT);
   currentEntry = storeEntry;
 }
 
@@ -60,6 +62,13 @@ void Navigator::stop() {
   delay(1000);
   steer.detach();
   drive.detach();
+}
+
+void Navigator::directDrive() {
+  int steerAmt = pulseIn(servoControlPin, HIGH) / 4 - 285;
+  steer.write(constrain(steerAmt, 30, 200));
+  int driveAmt = pulseIn(motorControlPin, HIGH) / 4 - 285;
+  drive.write(driveAmt);
 }
 
 void Navigator::followOverride() {

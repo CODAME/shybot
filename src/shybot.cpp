@@ -34,6 +34,8 @@
 #define PIN_FONA_RST 13
 #define PIN_BATTERY A0
 #define PIN_MOTOR_SWITCH A1
+#define PIN_SERVO_CONTROL A3
+#define PIN_MOTOR_CONTROL A4
 #define PIN_ADC_CS A5
 
 #define MCP_PIN_CALIBRATE 8
@@ -41,11 +43,12 @@
 #define FONA_ENABLED 1
 #define I2C_ADDRESS_MOTION 0
 
-#define RUN_DURATION 1 * 60 * 1000
+#define RUN_DURATION 2 * 60 * 1000
 #define OVERRIDE_DURATION 60 * 1000
 #define SLEEP_DURATION 1 * 60 * 1000
-#define COMM_MAX_DURATION 3 * 60 * 1000
+#define COMM_MAX_DURATION 1 * 60 * 1000
 #define MIN_VOLTS 4.5
+//#define MIN_VOLTS 0
 
 bool fonaOn = false; //always check on startup
 uint32_t timeModeChanged = 0;
@@ -140,7 +143,6 @@ void setMode(Navigator::nav_mode mode) {
 void setup(void)
 {
   Serial.begin(9600);
-  while(!Serial) {}
   battery = new BatterySensor(PIN_BATTERY);
 
   pinMode(PIN_FONA_KEY, OUTPUT);
@@ -161,9 +163,9 @@ void setup(void)
 
   logStore = new LogStore();
   storeEntry = new StoreEntry();
-  //storeEntry->mode = Navigator::RUN;
-  storeEntry->mode = Navigator::COMM;
-  navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_MOTOR_SWITCH, storeEntry);
+  storeEntry->mode = Navigator::RUN;
+  //storeEntry->mode = Navigator::COMM;
+  navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_SERVO_CONTROL, PIN_MOTOR_CONTROL, storeEntry);
   delay(1000);
   Watchdog.enable(16 * 1000); //this is the max apparently
 }
@@ -219,7 +221,7 @@ void loop(void)
     //check for override request and set mode accordingly
     if (shouldOverride) {
       setMode(Navigator::OVERRIDE);
-    } else if (gps->gpsSuccess || millis() - timeModeChanged < COMM_MAX_DURATION) {
+    } else if (gps->gpsSuccess || millis() - timeModeChanged > COMM_MAX_DURATION) {
       stopFONA();
       setMode(Navigator::RUN);
     } // else try GPS again

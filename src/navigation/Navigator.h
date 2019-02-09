@@ -46,10 +46,11 @@ class Navigator {
       int speed;
     };
 
-    Navigator(int drivePin, int steerPin, int motorSwitch, StoreEntry *storeEntry);
+    Navigator(int drivePin, int steerPin, int servoControlPin, int motorControlPin, StoreEntry *storeEntry);
 
     void go();
     void followOverride();
+    void directDrive();
     void backup();
     void backup(int heading);
     void stop();
@@ -81,7 +82,8 @@ class Navigator {
     Servo steer;
     int drivePin;
     int steerPin;
-    int motorSwitch;
+    int servoControlPin;
+    int motorControlPin;
     StoreEntry *currentEntry;
     double currentPower = 0;
     direction currentDirection = DIR_STOP;
