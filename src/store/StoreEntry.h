@@ -35,6 +35,7 @@ class StoreEntry {
     ProximitySensor::Proximity *proximity[NUM_PROXIMITY] = { nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr };
     RPMSensor::RPM rpm = RPMSensor::RPM({ 0, 0});
     int mode;
+    int forceDir;
 
 };
 #endif

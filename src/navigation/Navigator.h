@@ -11,6 +11,19 @@ enum {
   RPM_RANK = 2
 };
 
+enum force_dir {
+  FORCE_NONE = 0,
+  FORCE_FWD_RIGHT = 1,
+  FORCE_FWD = 2,
+  FORCE_FWD_LEFT = 3,
+  FORCE_SAFE_RIGHT = 4,
+  FORCE_SAFE_FWD = 5,
+  FORCE_SAFE_LEFT = 6,
+  FORCE_REV_LEFT = 7,
+  FORCE_REV = 8,
+  FORCE_REV_RIGHT = 9
+};
+
 
 class Navigator {
   public:
@@ -37,10 +50,7 @@ class Navigator {
       SLEEP,
       RUN,
       COMM,
-      OVERRIDE_FWD,
-      OVERRIDE_BACK,
-      OVERRIDE_LEFT,
-      OVERRIDE_RIGHT,
+      FORCE,
       DIRECT
     };
 
@@ -53,7 +63,7 @@ class Navigator {
     Navigator(int drivePin, int steerPin, int servoControlPin, int motorControlPin, StoreEntry *storeEntry);
 
     void go();
-    void followOverride();
+    void forceDrive();
     void directDrive();
     void backup();
     void backup(int heading);

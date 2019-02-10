@@ -14,7 +14,7 @@
 #define TURN_LENGTH 50
 #define BACKUP_LENGTH 50
 #define BACKUP_TRIES 5
-#define RUN_LENGTH 500
+#define RUN_LENGTH 1000
 #define RUN_MAX_TIME 120000
 #define STOP_MS 30000
 #define START_POWER 15
@@ -70,12 +70,35 @@ void Navigator::directDrive() {
   steer.attach(steerPin);
   int steerAmt = pulseIn(servoControlPin, HIGH) / 4 - 285;
   steer.write(constrain(steerAmt, 30, 200));
+  DEBUG(steerAmt);
   int driveAmt = pulseIn(motorControlPin, HIGH) / 4 - 285;
   drive.write(driveAmt);
+  DEBUG(driveAmt);
 }
 
-void Navigator::followOverride() {
-  //do override behavior
+void Navigator::forceDrive() {
+  drive.attach(drivePin);
+  steer.attach(steerPin);
+  int dir = currentEntry->forceDir;
+  int speed = 10;
+  DEBUG("Starting force drive");
+  if (dir == FORCE_FWD) {
+    followHeading(0, speed);
+  } else if (dir == FORCE_FWD_LEFT) {
+    followHeading(45, speed);
+  } else if (dir == FORCE_FWD_RIGHT) {
+    followHeading(315, speed);
+  } else if (dir == FORCE_SAFE_LEFT) {
+    safelyFollowHeading(45);
+  } else if (dir == FORCE_SAFE_RIGHT) {
+    safelyFollowHeading(315);
+  } else if (dir == FORCE_REV_LEFT) {
+    followHeading(135, speed);
+  } else if (dir == FORCE_REV) {
+    followHeading(180, speed);
+  } else if (dir == FORCE_REV_RIGHT) {
+    followHeading(215, speed);
+  }
 }
 
 void Navigator::startRun() {

@@ -44,8 +44,9 @@
 #define I2C_ADDRESS_MOTION 0
 
 #define RUN_DURATION 2 * 60 * 1000
-#define DIRECT_DURATION 1 * 60 * 1000
+#define DIRECT_DURATION 5 * 60 * 1000
 #define SLEEP_DURATION 1 * 60 * 1000
+#define FORCE_DURATION 30 * 1000
 #define COMM_MAX_DURATION 3 * 60 * 1000
 #define MIN_VOLTS 4.5
 //#define MIN_VOLTS 0
@@ -167,7 +168,7 @@ void setup(void)
   storeEntry->mode = Navigator::COMM;
   navigator = new Navigator(PIN_DRIVE, PIN_STEER, PIN_SERVO_CONTROL, PIN_MOTOR_CONTROL, storeEntry);
   delay(1000);
-  Watchdog.enable(16 * 1000); //this is the max apparently
+  //Watchdog.enable(16 * 1000); //this is the max apparently
 }
 
 void loop(void)
@@ -195,11 +196,18 @@ void loop(void)
     DEBUG("Mode: DIRECT");
     if (millis() - timeModeChanged < DIRECT_DURATION) {
       navigator->directDrive();
-      navigator->stop();
     } else {
+      navigator->stop();
       setMode(Navigator::COMM);
     }
-  } else if  (storeEntry->mode == Navigator::COMM) {
+  } else if (storeEntry->mode == Navigator::FORCE) {
+    if(millis() - timeModeChanged < FORCE_DURATION) {
+      navigator->forceDrive();
+    } else {
+      navigator->stop();
+      setMode(Navigator::SLEEP);
+    }
+  } else if (storeEntry->mode == Navigator::COMM) {
     bool shouldOverride = false;
     #if FONA_ENABLED
     DEBUG("Mode: COMM");
@@ -219,6 +227,7 @@ void loop(void)
       ioStore->getOverrides(storeEntry);
       if (storeEntry->mode != Navigator::COMM) {
         setMode(storeEntry->mode);
+        stopFONA();
       } else if (gps->gpsSuccess || millis() - timeModeChanged > COMM_MAX_DURATION) {
         stopFONA();
         setMode(Navigator::RUN);

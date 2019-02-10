@@ -10,12 +10,15 @@
 
 #define MAXTXFAILURES 5
 
+#define AIO_HTTP_HOST "http://io.adafruit.com/api/v2/"
+#define AIO_LAST "/data/retain"
+
 #define LOCATION_FEED AIO_USERNAME "/feeds/location/csv"
-#define HEADING_FEED AIO_USERNAME "/feeds/heading"
-#define BATTERY_VOLTS_FEED AIO_USERNAME "/feeds/battery-volts"
 #define SENSOR_FEED AIO_USERNAME "/feeds/sensors"
-#define MODE_FEED AIO_USERNAME "/feeds/mode"
 #define DIRECT_DRIVE_FEED AIO_USERNAME "/feeds/direct-drive"
+#define DIRECT_DRIVE_FEED_URL AIO_HTTP_HOST DIRECT_DRIVE_FEED AIO_LAST
+#define FORCE_DIRECTION_FEED AIO_USERNAME "/feeds/force-direction"
+#define FORCE_DIRECTION_FEED_URL AIO_HTTP_HOST FORCE_DIRECTION_FEED AIO_LAST
 
 #define halt(s) { DEBUG(F( s )); delay(1000); NVIC_SystemReset(); }
 
@@ -29,8 +32,28 @@ IOStore::IOStore(Adafruit_FONA *myFona, Adafruit_MQTT_FONA *myMqtt) {
   mqtt = myMqtt;
   locationFeed = new Adafruit_MQTT_Publish(mqtt, LOCATION_FEED, QOS_LEVEL);
   sensorFeed = new Adafruit_MQTT_Publish(mqtt, SENSOR_FEED, QOS_LEVEL);
-  directDriveFeed = new Adafruit_MQTT_Subscribe(mqtt, DIRECT_DRIVE_FEED, 3);
 };
+
+iostore_status IOStore::getLast(char* url) {
+  uint16_t statusCode;
+  int16_t datalen;
+  fona->flush();
+  if(!fona->HTTP_GET_start(url, &statusCode, (uint16_t *)&datalen)) {
+    return IOSTORE_NET_FAILURE;
+  }
+  int16_t pos = 0;
+  while(datalen > 0) {
+    while(fona->available()) {
+      char c = fona->read();
+      httpData[pos++] = c;
+      datalen--;
+      if(!datalen) break;
+    }
+  }
+  httpData[pos] = 0x00;
+  fona->HTTP_GET_end();
+  return IOSTORE_SUCCESS;
+}
 
 iostore_status IOStore::connectNetwork() {
   if(fona->getNetworkStatus() != 1) {
@@ -77,7 +100,7 @@ iostore_status IOStore::connectMQTT() {
 
   int8_t ret, retries = 5;
 
-  mqtt->subscribe(directDriveFeed);
+//  mqtt->subscribe(directDriveFeed);
 
   while (retries && (ret = mqtt->connect()) != 0) {
     switch (ret) {
@@ -103,21 +126,36 @@ iostore_status IOStore::connectMQTT() {
   return IOSTORE_SUCCESS;
 }
 
-bool IOStore::getOverrides(StoreEntry *entry) {
-  iostore_status fonaStatus = ensureConnected();
-  if (fonaStatus != IOSTORE_SUCCESS) {
-    return fonaStatus;
+iostore_status IOStore::getOverrideValue(char* feedUrl, char* value) {
+  iostore_status status = ensureConnected();
+  if(status != IOSTORE_SUCCESS) return status;
+  DEBUG("CHECKING OVERRIDES");
+  status = getLast(feedUrl);
+  int16_t pos = 0;
+  while(httpData[pos] != 0x00 && httpData[pos] != ',') {
+    value[pos] = httpData[pos];
+    pos++;
   }
-  Adafruit_MQTT_Subscribe *sub;
-  DEBUG("READING SUBSCRIPTION");
-  sub = mqtt->readSubscription(2000);
-  if (sub == directDriveFeed) {
-    DEBUG("ENTERING DIRECT DRIVE");
+  value[pos] = 0x00;
+  Serial.println(value);
+  return status;
+}
+
+iostore_status IOStore::getOverrides(StoreEntry *entry) {
+  iostore_status status = IOSTORE_SUCCESS;
+  char directDriveVal[100];
+  status = status ? status : getOverrideValue(DIRECT_DRIVE_FEED_URL, directDriveVal);
+  char forceDirVal[100];
+  status = status ? status : getOverrideValue(FORCE_DIRECTION_FEED_URL, forceDirVal);
+  if (strcmp(directDriveVal, "ON") == 0) {
     entry->mode = Navigator::DIRECT;
+  } else if (atoi(forceDirVal) != 0) {
+    entry->mode = Navigator::FORCE;
+    entry->forceDir = atoi(forceDirVal);
   } else {
     DEBUG("NO OVERRIDES FOUND");
   }
-  return fonaStatus;
+  return status;
 }
 
 iostore_status IOStore::store(StoreEntry *entry) {
