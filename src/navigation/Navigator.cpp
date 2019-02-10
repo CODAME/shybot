@@ -93,11 +93,14 @@ void Navigator::forceDrive() {
   } else if (dir == FORCE_SAFE_RIGHT) {
     safelyFollowHeading(315);
   } else if (dir == FORCE_REV_LEFT) {
-    followHeading(135, speed);
+    setSteer(LEFT);
+    setSpeed(10, DIR_REVERSE);
   } else if (dir == FORCE_REV) {
-    followHeading(180, speed);
+    setSteer(CENTER);
+    setSpeed(10, DIR_REVERSE);
   } else if (dir == FORCE_REV_RIGHT) {
-    followHeading(215, speed);
+    setSteer(RIGHT);
+    setSpeed(10, DIR_REVERSE);
   }
 }
 

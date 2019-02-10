@@ -19,9 +19,9 @@ enum force_dir {
   FORCE_SAFE_RIGHT = 4,
   FORCE_SAFE_FWD = 5,
   FORCE_SAFE_LEFT = 6,
-  FORCE_REV_LEFT = 7,
+  FORCE_REV_RIGHT = 7,
   FORCE_REV = 8,
-  FORCE_REV_RIGHT = 9
+  FORCE_REV_LEFT = 9
 };
 
 
