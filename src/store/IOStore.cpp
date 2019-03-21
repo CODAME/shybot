@@ -56,7 +56,9 @@ iostore_status IOStore::getLast(char* url) {
 }
 
 iostore_status IOStore::connectNetwork() {
-  if(fona->getNetworkStatus() != 1) {
+  uint8_t status = fona->getNetworkStatus()
+  if( status != 1 && status != 5) {
+    DEBUG(F("Network not ready."));
     return IOSTORE_NET_NOT_READY;
   }
 

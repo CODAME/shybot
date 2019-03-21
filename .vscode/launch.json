@@ -12,9 +12,9 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug",
-            "executable": "c:/Users/ben/source/shybot/.pioenvs/adafruit_feather_m0/firmware.elf",
-            "toolchainBinDir": "C:/Users/ben/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/ben/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
+            "executable": "/opt/shybot/.pioenvs/adafruit_feather_m0/firmware.elf",
+            "toolchainBinDir": "/Users/blerchin/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "svdPath": "/Users/blerchin/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
             "preLaunchTask": {
                 "type": "PlatformIO",
                 "task": "Pre-Debug"
@@ -25,9 +25,9 @@
             "type": "platformio-debug",
             "request": "launch",
             "name": "PIO Debug (skip Pre-Debug)",
-            "executable": "c:/Users/ben/source/shybot/.pioenvs/adafruit_feather_m0/firmware.elf",
-            "toolchainBinDir": "C:/Users/ben/.platformio/packages/toolchain-gccarmnoneeabi/bin",
-            "svdPath": "C:/Users/ben/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
+            "executable": "/opt/shybot/.pioenvs/adafruit_feather_m0/firmware.elf",
+            "toolchainBinDir": "/Users/blerchin/.platformio/packages/toolchain-gccarmnoneeabi/bin",
+            "svdPath": "/Users/blerchin/.platformio/platforms/atmelsam/misc/svd/ATSAMD21G18A.svd",
             "internalConsoleOptions": "openOnSessionStart"
         }
     ]

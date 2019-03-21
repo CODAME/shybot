@@ -45,10 +45,10 @@
 
 #define RUN_DURATION 2 * 60 * 1000
 #define DIRECT_DURATION 5 * 60 * 1000
-#define SLEEP_DURATION 1 * 60 * 1000
+#define SLEEP_DURATION 50 * 60 * 1000
 #define FORCE_DURATION 30 * 1000
-#define COMM_MAX_DURATION 3 * 60 * 1000
-#define MIN_VOLTS 4.5
+#define COMM_MAX_DURATION 5 * 60 * 1000
+#define MIN_VOLTS 5
 //#define MIN_VOLTS 0
 
 bool fonaOn = false; //always check on startup

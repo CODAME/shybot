@@ -14,7 +14,7 @@
 #define TURN_LENGTH 50
 #define BACKUP_LENGTH 50
 #define BACKUP_TRIES 5
-#define RUN_LENGTH 1000
+#define RUN_LENGTH 200
 #define RUN_MAX_TIME 120000
 #define STOP_MS 30000
 #define START_POWER 15
